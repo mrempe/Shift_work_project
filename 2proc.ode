@@ -1,0 +1,118 @@
+# parameters
+par xcirc=0
+
+# for human sleep: ic0=0.17, ic1=0.67
+#par ic0=0.17,ic1=0.67
+
+# for rodent (polyphasic) sleep (as a starting point)
+par ic0=0.17,ic1=0.27
+
+par hmax=1,alphah=18.2,betah=4.2
+par gscn=0.1
+
+iscn=gscn*(xc-xcirc)
+ihom=h
+
+
+
+#circadian curve
+# (the negative sign in xc makes it right-skewed instead of left-skewed
+# the 8 in the shift is so the first sleep episode is normal (when circshift=0)
+# UPDATE: with the left-skewed circadian curve 
+# NOTE: xc0 also needs to be changed. whatever you shift tc by, that's what goes in xc0 formula
+par circshift=0
+tc=t+circshift-2.5
+xc=(0.97*sin((pi/12)*tc)+0.22*sin(2*(pi/12)*tc)+0.07*sin(3*(pi/12)*tc)+0.03*sin(4*(pi/12)*tc)+0.001*sin(5*(pi/12)*tc))
+xc0=(0.97*sin((pi/12)*(circshift-2.5)) + 0.22*sin((pi/6)*(circshift-2.5)) + 0.07*sin((pi/4)*(circshift-2.5)) + 0.03*sin((pi/3)*(circshift-2.5)) + 0.001*sin((5*pi/12)*(circshift-2.5)))
+xcp=(0.97*(pi/12)*cos((pi/12)*tc)+0.22*(pi/6)*cos((pi/6)*tc) + 0.07*(pi/4)*cos((pi/4)*tc)+0.03*(pi/3)*cos((pi/3)*tc) + 0.001*(5*pi/12)*cos(5*(pi/12)*tc))
+
+
+
+#phase
+phase' = 15
+# phase still needs to be initialize using the MATLAB interface
+#firstphase'=0
+#par tmin
+#global 1 xcp {tmin=t*firstphase;firstphase=0}
+#global 0 t {phase=-15*tmin+360}
+global 1 phase-360 {phase=0}
+
+#homeostat
+#h'=(hmax-h)*(sinf(x,kv))/alphah-h*(1-sinf(x,kv))/betah
+h'=(hmax-h)*(sleepwake)/alphah-h*(1-sleepwake)/betah
+# initialize homeostat using circshift (from xpp book)
+#global 0 t {h=(1/ghom)*(gscn*(xc0-xcirc)+gammav-4-inpv)}
+#New way: initialize homeostat 
+#to what it would normally start at after 
+#a normal night of sleep in normal phase
+#h=0.0978*ghom=0.538, what we want ih to start at
+global 0 t {h=iscn+ic1}
+
+
+# keeping track of the first sleep episode so we can keep track of whats
+# happening there w.r.t. circadian phase
+#f1epiH'=0
+#global -1 xv {f1epiH=0}
+#f1=f1epiH*sv
+
+
+# sleep/wake state variable = 1 if awake, = 0 if asleep
+sleepwake'= 0
+global 0 t {sleepwake=0}
+global -1 h-(iscn+ic0) {sleepwake=1}
+global 1 h-(iscn+ic1) {sleepwake=0}
+# For sleep deprivation
+# begin the simulation with normal inp and inpv 
+# then change them such that the system does not fall asleep when homeostat reaches 
+# upper circadian curve. Determine when the homeostat 
+# reaches ic and set a flag for sleep deprivation
+sleepdep'=0
+init sleepdep=0
+tstrtsldp'=0
+init tstrtsldp=48
+par slpdepleng=0
+frstcross'=0
+global 0 t {frstcross=0}
+changeinp=if(slpdepleng==0)then(1000)else(0)
+par hisbig=0
+
+# turn on sleep deprivation just before ordinarily falling asleep (sleepdep starts just before sleep deprivation)
+#global 1 h-0.675 {hisbig=1000; slpdepleng=0} 
+#global 1 ihom-(iscn+ic1-0.25)+changeinp+frstcross+hisbig {sleepdep=f1epiH*s; tstrtsldp=t*f1epiH; frstcross=1000} 
+##global 1 ihom-(iorx+ic1-0.25)+changeinp+frstcross+hisbig {sleepdep=f1epiH*s; tstrtsldp=t*f1epiH; frstcross=1000} 
+
+#global 1 ihom-(iscn+ic1-0.25)-changeinp-frstcross-hisbig {sleepdep=f1epiH*s; tstrtsldp=t*f1epiH; frstcross=1000} 
+#global 1 ihom-(iscn+ic1) {sleepdep=f1epiH*x}
+# turn off sleepdep when sleep deprivation is over and it falls asleep
+###global 1 t-(tstrtsldp+slpdepleng+0.25)  {sleepdep=0}
+#global 1 h-0.675 {sleepdep=0}
+
+
+
+#initial conditions
+
+#init h=0.095521
+init phase=194.925
+
+
+#AUXILIARY VARIABLES
+# comment out for speed
+aux circ=iscn
+aux ic=iscn+ic1
+aux ica=iscn+ic0
+aux ih=ihom
+
+
+# first one plots 2-process stuff, next one plots rem, nrem, aminergic
+#@ dt=.001,total=48,meth=euler,bound=1000000,maxstor=2000001
+@ dt=.001,total=72,meth=euler,xp=t,yp=ih,xlo=0,xhi=72,ylo=-3,yhi=3,nplot=3,yp2=ic,yp3=ica,bound=1000000,maxstor=2000001
+#@ dt=.001,total=48,meth=euler,xp=t,yp=xn,xlo=0,xhi=48,ylo=-3,yhi=3,nplot=3,yp2=xr,yp3=x,bound=1000000,maxstor=2000001,output=output1.dat
+
+done
+
+
+
+
+
+
+

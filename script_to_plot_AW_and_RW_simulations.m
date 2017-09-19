@@ -3,13 +3,17 @@
 %								2) SWS episode duration for AW and RW
 %								3) REMS episode duration for AW and RW
 
+%profile on 
+
+input_params.taui = 8.6;
+input_params.taud = 3.2;
 
 
 [S,sleepstate,num_wake_episodesAW,mean_SWS_lengthAW,REMS_episode_duration_AW_averages,...
- std_wake_episodes_vs_timeAW,std_SWS_episode_duration_vs_timeAW,REMS_episode_duration_AW_Std] = two_process_model_with_markov_chain(134,8.6,3.2,'AW',1);
+ std_wake_episodes_vs_timeAW,std_SWS_episode_duration_vs_timeAW,REMS_episode_duration_AW_Std] = two_process_model_with_markov_chain(134,input_params,'AW',1);
 
 [S,sleepstate,num_wake_episodesRW,mean_SWS_lengthRW,REMS_episode_duration_RW_averages,...
- std_wake_episodes_vs_timeRW,std_SWS_episode_duration_vs_timeRW,REMS_episode_duration_RW_Std] = two_process_model_with_markov_chain(134,8.6,3.2,'RW',1);
+ std_wake_episodes_vs_timeRW,std_SWS_episode_duration_vs_timeRW,REMS_episode_duration_RW_Std] = two_process_model_with_markov_chain(134,input_params,'RW',1);
 
 
 
@@ -107,3 +111,4 @@ set(gca,'box','off')
 set(gca,'color','none')
 ylabel({'REM sleep'; '(episode duration, seconds)'})
 
+%profile viewer

@@ -1,5 +1,5 @@
 function [S,state,avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time,...
-		  std_wake_episodes_vs_time,std_SWS_episode_duration_vs_time,std_REMS_episode_duration_vs_time]=two_process_model_with_markov_chain(total_time,taui,taud,shift,makeplots)
+		  std_wake_episodes_vs_time,std_SWS_episode_duration_vs_time,std_REMS_episode_duration_vs_time]=two_process_model_with_markov_chain(total_time,input_params,shift,makeplots)
 % USAGE: [S,state,avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time]=two_process_model_with_markov_chain(total_time,taui,taud,shift,makeplots)
 %
 % This function simulates the changes in sleep state using a markov chain model similar to Kemp and Kamphuisen SLEEP 1986
@@ -21,9 +21,15 @@ function [S,state,avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg
 % for the RW case:
 %  [S,num_wake_episodes,mean_SWS_length,mean_REM_length]=two_process_model_with_markov_chain(134,8.6,3.2,'RW',1)
 %
+%
+% UPDATE:  9.19.2017:  read in just one struct for all of the input parameters
+taui = input_params.taui;
+taud = input_params.taud;
+
 
 %AW: [38 46 62 70 86 94 110 118]
 %RW: [26 34 50 58 74 82 98 106]
+
 
 if nargin == 3
 	sleep_dep_start_stop_times = [];
@@ -89,40 +95,40 @@ end
 
 % ahat_R_S =0.0015*10;
 
-ahat_W_S = 0.0023;
+% ahat_W_S = 0.0023;
 
 
-ahat_S_W = 0.0075;
+% ahat_S_W = 0.0075;
 
 
-ahat_W_R = 0.0022;
+% ahat_W_R = 0.0022;
 
 
-ahat_R_W = 3.1024e-04;
+% ahat_R_W = 3.1024e-04;
 
 
-ahat_S_R = 0.0047;
+% ahat_S_R = 0.0047;
 
 
-ahat_R_S = 0.0019;
+% ahat_R_S = 0.0019;
 
 
 % these estimates were developed using the first 12 hours of baseline, with both RW and AW. These are averages over all recordings.
-ahat_W_S=0.0028;
-ahat_S_W=0.0095;
-ahat_W_R=0.0046;
-ahat_R_W=3.6982e-04;
-ahat_S_R=0.0043;
-ahat_R_S=0.0022;
+% ahat_W_S=0.0028;
+% ahat_S_W=0.0095;
+% ahat_W_R=0.0046;
+% ahat_R_W=3.6982e-04;
+% ahat_S_R=0.0043;
+% ahat_R_S=0.0022;
 
 % These estimates were developed using the first 24 hours of the recordings (baseline), with both RW and AW.  these are averages over all recordings.
 
-ahat_W_S=0.0035;
-ahat_S_W=0.0045;
-ahat_W_R=0.0057;
-ahat_R_W=1.2374e-04;
-ahat_S_R=0.0047;
-ahat_R_S=0.0023;
+% ahat_W_S=0.0035;
+% ahat_S_W=0.0045;
+% ahat_W_R=0.0057;
+% ahat_R_W=1.2374e-04;
+% ahat_S_R=0.0047;
+% ahat_R_S=0.0023;
 % --------------------------------------------------------------
 
 % These are estimates that I developed to match baseline episode duration.  I modified the numbers found using first 24 hours with both AW and RW
@@ -441,43 +447,6 @@ av_REM_percentage  = mean(REM_percentage);
 
 
 
-% for j=1:num_simulations
-% 	runs = contiguous(state(:,j),['W' 'S' 'R']);
-
-% 	wake_runs{j}  = runs{1,2};
-% 	sleep_runs{j} = runs{2,2};
-% 	REM_runs{j}   = runs{3,2};
-
-% 	num_wake_episodes(j) = size(wake_runs{j},1);
-
-
-	
-
-% 	for i=1:size(wake_runs{j},1)
-%     	w_episode_length{j}(i) = wake_runs{j}(i,2)-wake_runs{j}(i,1)+1;
-% 	end
-
-% 	for i=1:size(sleep_runs{j},1)
-%     	s_episode_length{j}(i) = sleep_runs{j}(i,2)-sleep_runs{j}(i,1)+1;
-    
-% 	end
-
-% 	for i=1:size(REM_runs{j},1)
-% 		r_episode_length{j}(i) = REM_runs{j}(i,2)-REM_runs{j}(i,1)+1;
-% 	end
-
-
-% 	mean_SWS_length(j)  = mean(s_episode_length{j}) * 10;
-% 	mean_wake_length(j) = mean(w_episode_length{j}) * 10;
-% 	mean_REM_length(j)  = mean(r_episode_length{j}) * 10;
-% end
-
-% global_av_SWS_length  = mean(mean_SWS_length)
-% global_av_wake_length = mean(mean_wake_length)
-% global_av_REM_length  = mean(mean_REM_length)
-% global_av_wake_episodes_per24hr = mean(num_wake_episodes)/num_days
-
-
 if makeplots
 	
 	% ---- first make a shaded plot showing average trace of the homeostat ----
@@ -490,7 +459,7 @@ if makeplots
 		circ_curvenew = circ_curve;
 	end 
 
-	hfig1=figure
+	hfig1=figure;
 	err = std(S,0,2);
 	set(hfig1,'Position',[200 700 1400 275])
 	% hold on
@@ -500,7 +469,7 @@ if makeplots
 	% size(err)
 	% patch([t' fliplr(t')],[mean(S,2)+err fliplr(mean(S,2)-err)],[0.7 0.7 0.7]);
 	fill([tnew';flipud(tnew')],[mean(S,2)-err;flipud(mean(S,2)+err)],[0.9 0.9 0.9],'linestyle','none');
-	l=line(tnew',mean(S,2))
+	l=line(tnew',mean(S,2));
 	set(l,'linewidth',1.5)
 	ax=gca;
 	ax.XTick = 0:12:t(end);
@@ -545,13 +514,13 @@ if makeplots
 	% legend('S-0.5*C')
 
 % ---------------------------------------------------------------------------------
-	hfig2=figure
+	hfig2=figure;
 	set(hfig2,'Position',[200 350 1400 275])
-	p=plot(tnew',mean(S,2)-circ_curvenew',tnew',1-mean(S,2)+circ_curvenew','r')
+	p=plot(tnew',mean(S,2)-circ_curvenew',tnew',1-mean(S,2)+circ_curvenew','r');
 	set(p,'linewidth',1.5)
 	ax=gca;
 	ax.XTick = 0:12:t(end);
-	h_legend=legend('Sleepiness','Alertness')
+	h_legend=legend('Sleepiness','Alertness');
 	legend(ax,'boxoff')
 	set(h_legend,'FontSize',16)
 	ax=gca;

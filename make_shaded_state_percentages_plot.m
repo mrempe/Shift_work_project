@@ -32,7 +32,7 @@ REM_percentage_means = mean(REM_percentage,2)';
 
 
 
-FigHandle = figure
+FigHandle = figure;
 set(FigHandle,'Position',[300 50 941, 216]);
 %pbaspect([1 0.2142 0.2142])
 plot(window_times,REM_percentage_means,window_times,REM_percentage_means+SWS_percentage_means)

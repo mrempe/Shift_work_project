@@ -1,6 +1,6 @@
-function [avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time,...
-	      std_wake_episodes_vs_time,std_SWS_episode_duration_vs_time,std_REMS_episode_duration_vs_time] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations)
-% USAGE: [avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations)
+function [averages,stndev] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations,makeplots)
+% USAGE: [avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time,...
+%	      std_wake_episodes_vs_time,std_SWS_episode_duration_vs_time,std_REMS_episode_duration_vs_time] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations,makeplots)[avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations)
 
 
 if strcmp(shift,'AW') || strcmp(shift,'none')
@@ -27,28 +27,134 @@ for j=1:num_simulations
 	W3_runs = contiguous(state(W3_indices,j),['W' 'S' 'R']);
 	W4_runs = contiguous(state(W4_indices,j),['W' 'S' 'R']);
 
-	B_wake_runs{j}   = baseline_runs{1,2};
-	B_sleep_runs{j}  = baseline_runs{2,2};
-	B_REM_runs{j}    = baseline_runs{3,2};
-	W1_wake_runs{j}  = W1_runs{1,2};
-	W1_sleep_runs{j} = W1_runs{2,2};
-	W1_REM_runs{j}   = W1_runs{3,2};
-	W2_wake_runs{j}  = W2_runs{1,2};
-	W2_sleep_runs{j} = W2_runs{2,2};
-	W2_REM_runs{j}   = W2_runs{3,2};
-	W3_wake_runs{j}  = W3_runs{1,2};
-	W3_sleep_runs{j} = W3_runs{2,2};
-	W3_REM_runs{j}   = W3_runs{3,2};
-	W4_wake_runs{j}  = W4_runs{1,2};
-	W4_sleep_runs{j} = W4_runs{2,2};
-	W4_REM_runs{j}   = W4_runs{3,2};
+	% only consider W and SWS runs of 3 epochs or longer and REMS runs of 2 epochs or longer
+	baseline_runs = remove_short_runs(baseline_runs);
+	W1_runs = remove_short_runs(W1_runs);
+	W2_runs = remove_short_runs(W2_runs);
+	W3_runs = remove_short_runs(W3_runs);
+	W4_runs = remove_short_runs(W4_runs);
 
-	% Number of wake episodes
+
+
+	try 
+		B_wake_runs{j} = baseline_runs{1,2};
+	catch
+		B_wake_runs{j} = [];
+	end
+	try 
+		B_sws_runs{j}  = baseline_runs{2,2};
+	catch 
+		B_sws_runs{j} = [];
+	end
+	try
+		B_rems_runs{j}  = baseline_runs{3,2};
+	catch 
+		B_rems_runs{j} = [];
+	end
+	try 
+		W1_wake_runs{j} = W1_runs{1,2};
+	catch 
+		W1_wake_runs{j} = [];
+	end
+	try
+		W1_sws_runs{j} = W1_runs{2,2};
+	catch 
+		W1_sws_runs{j} = [];
+	end 
+	try
+		W1_rems_runs{j} = W1_runs{3,2};
+	catch
+		W1_rems_runs{j} = [];
+	end
+	try 
+		W2_wake_runs{j} = W2_runs{1,2};
+	catch
+		W2_wake_runs{j} = [];
+	end
+	
+	try
+		W2_sws_runs{j} = W2_runs{2,2};
+	catch
+		W2_sws_runs{j} = [];
+	end
+	try
+		W2_rems_runs{j} = W2_runs{3,2};
+	catch
+		W2_rems_runs{j} = [];
+	end 
+	try 
+		W3_wake_runs{j} = W3_runs{1,2};
+	catch
+		W3_wake_runs{j} = [];
+	end
+	try
+		W3_sws_runs{j} = W3_runs{2,2};
+	catch
+		W3_sws_runs{j} = [];
+	end
+	try
+		W3_rems_runs{j} = W3_runs{3,2};
+	catch 
+		W3_rems_runs{j} = [];
+	end
+	try
+		W4_wake_runs{j} = W4_runs{1,2};
+	catch 
+		W4_wake_runs{j} = [];
+	end
+	try
+		W4_sws_runs{j} = W4_runs{2,2};
+	catch
+		W4_sws_runs{j} = [];
+	end
+	try 
+		W4_rems_runs{j} = W4_runs{3,2};
+	catch
+		W4_rems_runs{j} = [];
+	end
+
+	% Number of wake epochs (not episodes)
+	B_num_wake_epochs(j) = length(find(state(1:8641,j)=='W'));
+	W1_num_wake_epochs(j) = length(find(state(W1_indices,j)=='W'));
+	W2_num_wake_epochs(j) = length(find(state(W2_indices,j)=='W'));
+	W3_num_wake_epochs(j) = length(find(state(W3_indices,j)=='W'));
+	W4_num_wake_epochs(j) = length(find(state(W4_indices,j)=='W'));
+
+	% Number of sws epochs 
+	B_num_sws_epochs(j)  = length(find(state(1:8641,j)=='S'));
+	W1_num_sws_epochs(j) = length(find(state(W1_indices,j)=='S'));
+	W2_num_sws_epochs(j) = length(find(state(W2_indices,j)=='S'));
+	W3_num_sws_epochs(j) = length(find(state(W3_indices,j)=='S'));
+	W4_num_sws_epochs(j) = length(find(state(W4_indices,j)=='S'));
+	
+	% Number of rems epochs
+	B_num_rems_epochs(j) = length(find(state(1:8641,j)=='R'));
+	W1_num_rems_epochs(j) = length(find(state(W1_indices,j)=='R'));
+	W2_num_rems_epochs(j) = length(find(state(W2_indices,j)=='R'));
+	W3_num_rems_epochs(j) = length(find(state(W3_indices,j)=='R'));
+	W4_num_rems_epochs(j) = length(find(state(W4_indices,j)=='R'));
+
+
+	% Number of wake episodes (not epochs)
 	B_num_wake_episodes(j)  = size(B_wake_runs{j},1);
 	W1_num_wake_episodes(j) = size(W1_wake_runs{j},1);
 	W2_num_wake_episodes(j) = size(W2_wake_runs{j},1);
 	W3_num_wake_episodes(j) = size(W3_wake_runs{j},1);
 	W4_num_wake_episodes(j) = size(W4_wake_runs{j},1);
+
+	% Number of SWS episodes
+	B_num_sws_episodes(j)  = size(B_sws_runs{j},1);
+	W1_num_sws_episodes(j) = size(W1_sws_runs{j},1);
+	W2_num_sws_episodes(j) = size(W2_sws_runs{j},1);
+	W3_num_sws_episodes(j) = size(W3_sws_runs{j},1);
+	W4_num_sws_episodes(j) = size(W4_sws_runs{j},1);
+
+	% Number of REMS episodes
+	B_num_rems_episodes(j)  = size(B_rems_runs{j},1);
+	W1_num_rems_episodes(j) = size(W1_rems_runs{j},1);
+	W2_num_rems_episodes(j) = size(W2_rems_runs{j},1);
+	W3_num_rems_episodes(j) = size(W3_rems_runs{j},1);
+	W4_num_rems_episodes(j) = size(W4_rems_runs{j},1);
 
 	
 % Baseline
@@ -58,19 +164,17 @@ for j=1:num_simulations
 		end 
 	end
 
-	for i=1:size(B_sleep_runs{j},1)
-    	B_s_episode_length{j}(i) = B_sleep_runs{j}(i,2)-B_sleep_runs{j}(i,1)+1;
+	for i=1:size(B_sws_runs{j},1)
+    	B_s_episode_length{j}(i) = B_sws_runs{j}(i,2)-B_sws_runs{j}(i,1)+1;
     
 	end
 
-	for i=1:size(B_REM_runs{j},1)
-		B_r_episode_length{j}(i) = B_REM_runs{j}(i,2)-B_REM_runs{j}(i,1)+1;
+	for i=1:size(B_rems_runs{j},1)
+		B_r_episode_length{j}(i) = B_rems_runs{j}(i,2)-B_rems_runs{j}(i,1)+1;
 	end
-	B_mean_SWS_length(j)  = mean(B_s_episode_length{j}) * 10;
-	B_mean_wake_length(j) = mean(B_w_episode_length{j}) * 10;
-	B_mean_REM_length(j)  = mean(B_r_episode_length{j}) * 10;
-
-
+	try B_mean_SWS_length(j)  = mean(B_s_episode_length{j}) * 10; catch B_mean_SWS_length(j)  = NaN;end 
+	try B_mean_wake_length(j) = mean(B_w_episode_length{j}) * 10; catch B_mean_wake_length(j) = NaN; end
+	try B_mean_REM_length(j)  = mean(B_r_episode_length{j}) * 10; catch B_mean_REM_length(j)  = NaN; end 
 % W1
 	for i=1:size(W1_wake_runs{j},1)
     	if W1_wake_runs{j}(i,2)-W1_wake_runs{j}(i,1)+1 >=2
@@ -78,18 +182,17 @@ for j=1:num_simulations
     	end 
 	end
 
-	for i=1:size(W1_sleep_runs{j},1)
-    	W1_s_episode_length{j}(i) = W1_sleep_runs{j}(i,2)-W1_sleep_runs{j}(i,1)+1;
+	for i=1:size(W1_sws_runs{j},1)
+    	W1_s_episode_length{j}(i) = W1_sws_runs{j}(i,2)-W1_sws_runs{j}(i,1)+1;
     
 	end
 
-	for i=1:size(W1_REM_runs{j},1)
-		W1_r_episode_length{j}(i) = W1_REM_runs{j}(i,2)-W1_REM_runs{j}(i,1)+1;
+	for i=1:size(W1_rems_runs{j},1)
+		W1_r_episode_length{j}(i) = W1_rems_runs{j}(i,2)-W1_rems_runs{j}(i,1)+1;
 	end
-	W1_mean_SWS_length(j)  = mean(W1_s_episode_length{j}) * 10;
-	W1_mean_wake_length(j) = mean(W1_w_episode_length{j}) * 10;
-	W1_mean_REM_length(j)  = mean(W1_r_episode_length{j}) * 10;
-
+	try W1_mean_SWS_length(j)  = mean(W1_s_episode_length{j}) * 10; catch W1_mean_SWS_length(j)  = NaN; end
+	try W1_mean_wake_length(j) = mean(W1_w_episode_length{j}) * 10; catch W1_mean_wake_length(j) = NaN; end 
+	try W1_mean_REM_length(j)  = mean(W1_r_episode_length{j}) * 10; catch W1_mean_REM_length(j)  = NaN; end 
 
 % W2
 	for i=1:size(W2_wake_runs{j},1)
@@ -98,17 +201,17 @@ for j=1:num_simulations
     	end 
 	end
 
-	for i=1:size(W2_sleep_runs{j},1)
-    	W2_s_episode_length{j}(i) = W2_sleep_runs{j}(i,2)-W2_sleep_runs{j}(i,1)+1;
+	for i=1:size(W2_sws_runs{j},1)
+    	W2_s_episode_length{j}(i) = W2_sws_runs{j}(i,2)-W2_sws_runs{j}(i,1)+1;
     
 	end
 
-	for i=1:size(W2_REM_runs{j},1)
-		W2_r_episode_length{j}(i) = W2_REM_runs{j}(i,2)-W2_REM_runs{j}(i,1)+1;
+	for i=1:size(W2_rems_runs{j},1)
+		W2_r_episode_length{j}(i) = W2_rems_runs{j}(i,2)-W2_rems_runs{j}(i,1)+1;
 	end
-	W2_mean_SWS_length(j)  = mean(W2_s_episode_length{j}) * 10;
-	W2_mean_wake_length(j) = mean(W2_w_episode_length{j}) * 10;
-	W2_mean_REM_length(j)  = mean(W2_r_episode_length{j}) * 10;
+	try W2_mean_SWS_length(j)  = mean(W2_s_episode_length{j}) * 10; catch W2_mean_SWS_length(j)  = NaN; end
+	try W2_mean_wake_length(j) = mean(W2_w_episode_length{j}) * 10; catch W2_mean_wake_length(j) = NaN; end
+	try W2_mean_REM_length(j)  = mean(W2_r_episode_length{j}) * 10; catch W2_mean_REM_length(j)  = NaN; end 
 
 % W3
 	for i=1:size(W3_wake_runs{j},1)
@@ -117,17 +220,17 @@ for j=1:num_simulations
     	end 
 	end
 
-	for i=1:size(W3_sleep_runs{j},1)
-    	W3_s_episode_length{j}(i) = W3_sleep_runs{j}(i,2)-W3_sleep_runs{j}(i,1)+1;
+	for i=1:size(W3_sws_runs{j},1)
+    	W3_s_episode_length{j}(i) = W3_sws_runs{j}(i,2)-W3_sws_runs{j}(i,1)+1;
     
 	end
 
-	for i=1:size(W3_REM_runs{j},1)
-		W3_r_episode_length{j}(i) = W3_REM_runs{j}(i,2)-W3_REM_runs{j}(i,1)+1;
+	for i=1:size(W3_rems_runs{j},1)
+		W3_r_episode_length{j}(i) = W3_rems_runs{j}(i,2)-W3_rems_runs{j}(i,1)+1;
 	end
-	W3_mean_SWS_length(j)  = mean(W3_s_episode_length{j}) * 10;
-	W3_mean_wake_length(j) = mean(W3_w_episode_length{j}) * 10;
-	W3_mean_REM_length(j)  = mean(W3_r_episode_length{j}) * 10;
+	try W3_mean_SWS_length(j)  = mean(W3_s_episode_length{j}) * 10; catch W3_mean_SWS_length(j)  = NaN; end 
+	try W3_mean_wake_length(j) = mean(W3_w_episode_length{j}) * 10; catch W3_mean_wake_length(j) = NaN; end 
+	try W3_mean_REM_length(j)  = mean(W3_r_episode_length{j}) * 10; catch W3_mean_REM_length(j)  = NaN; end 
 
 % W4
 	for i=1:size(W4_wake_runs{j},1)
@@ -136,93 +239,172 @@ for j=1:num_simulations
     	end 
 	end
 
-	for i=1:size(W4_sleep_runs{j},1)
-    	W4_s_episode_length{j}(i) = W4_sleep_runs{j}(i,2)-W4_sleep_runs{j}(i,1)+1;
+	for i=1:size(W4_sws_runs{j},1)
+    	W4_s_episode_length{j}(i) = W4_sws_runs{j}(i,2)-W4_sws_runs{j}(i,1)+1;
     
 	end
 
-	for i=1:size(W4_REM_runs{j},1)
-		W4_r_episode_length{j}(i) = W4_REM_runs{j}(i,2)-W4_REM_runs{j}(i,1)+1;
+	for i=1:size(W4_rems_runs{j},1)
+		W4_r_episode_length{j}(i) = W4_rems_runs{j}(i,2)-W4_rems_runs{j}(i,1)+1;
 	end
-	W4_mean_SWS_length(j)  = mean(W4_s_episode_length{j}) * 10;
-	W4_mean_wake_length(j) = mean(W4_w_episode_length{j}) * 10;
-	W4_mean_REM_length(j)  = mean(W4_r_episode_length{j}) * 10;
+	try W4_mean_SWS_length(j)  = mean(W4_s_episode_length{j}) * 10; catch W4_mean_SWS_length(j)  = NaN;end 
+	try W4_mean_wake_length(j) = mean(W4_w_episode_length{j}) * 10; catch W4_mean_wake_length(j) = NaN;end 
+	try W4_mean_REM_length(j)  = mean(W4_r_episode_length{j}) * 10; catch W4_mean_REM_length(j)  = NaN;end 
 
 end  % end of looping over num_simulations
 
 
 % average over the simulations
-B_global_av_wake_length = mean(B_mean_wake_length);
-B_global_av_SWS_length  = mean(B_mean_SWS_length);
-B_global_av_REM_length  = mean(B_mean_REM_length);
-B_global_av_wake_episodes = mean(B_num_wake_episodes);
+B_global_av_wake_length   = mean(B_mean_wake_length,'omitnan');
+B_global_av_SWS_length    = mean(B_mean_SWS_length,'omitnan');
+B_global_av_REM_length    = mean(B_mean_REM_length,'omitnan');
+B_global_av_wake_episodes = mean(B_num_wake_episodes,'omitnan');
+B_global_av_sws_episodes  = mean(B_num_sws_episodes,'omitnan');
+B_global_av_rems_episodes = mean(B_num_rems_episodes,'omitnan');
+B_global_av_wake_epochs   = mean(B_num_wake_epochs,'omitnan');
+B_global_av_sws_epochs    = mean(B_num_sws_epochs,'omitnan');
+B_global_av_rems_epochs   = mean(B_num_rems_epochs,'omitnan');
 
+W1_global_av_wake_length   = mean(W1_mean_wake_length,'omitnan');
+W1_global_av_SWS_length    = mean(W1_mean_SWS_length,'omitnan');
+W1_global_av_REM_length    = mean(W1_mean_REM_length,'omitnan');
+W1_global_av_wake_episodes = mean(W1_num_wake_episodes,'omitnan');
+W1_global_av_sws_episodes  = mean(W1_num_sws_episodes,'omitnan');
+W1_global_av_rems_episodes = mean(W1_num_rems_episodes,'omitnan');
+W1_global_av_wake_epochs   = mean(W1_num_wake_epochs,'omitnan');
+W1_global_av_sws_epochs    = mean(W1_num_sws_epochs,'omitnan');
+W1_global_av_rems_epochs   = mean(W1_num_rems_epochs,'omitnan');
 
-W1_global_av_wake_length = mean(W1_mean_wake_length);
-W1_global_av_SWS_length  = mean(W1_mean_SWS_length);
-W1_global_av_REM_length  = mean(W1_mean_REM_length);
-W1_global_av_wake_episodes = mean(W1_num_wake_episodes);
+W2_global_av_wake_length   = mean(W2_mean_wake_length,'omitnan');
+W2_global_av_SWS_length    = mean(W2_mean_SWS_length,'omitnan');
+W2_global_av_REM_length    = mean(W2_mean_REM_length,'omitnan');
+W2_global_av_wake_episodes = mean(W2_num_wake_episodes,'omitnan');
+W2_global_av_sws_episodes  = mean(W2_num_sws_episodes,'omitnan');
+W2_global_av_rems_episodes = mean(W2_num_rems_episodes,'omitnan');
+W2_global_av_wake_epochs   = mean(W2_num_wake_epochs,'omitnan');
+W2_global_av_sws_epochs    = mean(W2_num_sws_epochs,'omitnan');
+W2_global_av_rems_epochs   = mean(W2_num_rems_epochs,'omitnan');
 
+W3_global_av_wake_length   = mean(W3_mean_wake_length,'omitnan');
+W3_global_av_SWS_length    = mean(W3_mean_SWS_length,'omitnan');
+W3_global_av_REM_length    = mean(W3_mean_REM_length,'omitnan');
+W3_global_av_wake_episodes = mean(W3_num_wake_episodes,'omitnan');
+W3_global_av_sws_episodes  = mean(W3_num_sws_episodes,'omitnan');
+W3_global_av_rems_episodes = mean(W3_num_rems_episodes,'omitnan');
+W3_global_av_wake_epochs   = mean(W3_num_wake_epochs,'omitnan');
+W3_global_av_sws_epochs    = mean(W3_num_sws_epochs,'omitnan');
+W3_global_av_rems_epochs   = mean(W3_num_rems_epochs,'omitnan');
 
-W2_global_av_wake_length = mean(W2_mean_wake_length);
-W2_global_av_SWS_length  = mean(W2_mean_SWS_length);
-W2_global_av_REM_length  = mean(W2_mean_REM_length);
-W2_global_av_wake_episodes = mean(W2_num_wake_episodes);
-
-
-W3_global_av_wake_length = mean(W3_mean_wake_length);
-W3_global_av_SWS_length  = mean(W3_mean_SWS_length);
-W3_global_av_REM_length  = mean(W3_mean_REM_length);
-W3_global_av_wake_episodes = mean(W3_num_wake_episodes);
-
-
-W4_global_av_wake_length = mean(W4_mean_wake_length);
-W4_global_av_SWS_length  = mean(W4_mean_SWS_length);
-W4_global_av_REM_length  = mean(W4_mean_REM_length);
-W4_global_av_wake_episodes = mean(W4_num_wake_episodes);
-
+W4_global_av_wake_length   = mean(W4_mean_wake_length,'omitnan');
+W4_global_av_SWS_length    = mean(W4_mean_SWS_length,'omitnan');
+W4_global_av_REM_length    = mean(W4_mean_REM_length,'omitnan');
+W4_global_av_wake_episodes = mean(W4_num_wake_episodes,'omitnan');
+W4_global_av_sws_episodes  = mean(W4_num_sws_episodes,'omitnan');
+W4_global_av_rems_episodes = mean(W4_num_rems_episodes,'omitnan');
+W4_global_av_wake_epochs   = mean(W4_num_wake_epochs,'omitnan');
+W4_global_av_sws_epochs    = mean(W4_num_sws_epochs,'omitnan');
+W4_global_av_rems_epochs   = mean(W4_num_rems_epochs,'omitnan');
 
 % std's over the simulations
-B_global_std_wake_length = std(B_mean_wake_length);
-B_global_std_SWS_length  = std(B_mean_SWS_length);
-B_global_std_REM_length  = std(B_mean_REM_length);
-B_global_std_wake_episodes = std(B_num_wake_episodes);
+B_global_std_wake_length   = std(B_mean_wake_length,'omitnan');
+B_global_std_SWS_length    = std(B_mean_SWS_length,'omitnan');
+B_global_std_REM_length    = std(B_mean_REM_length,'omitnan');
+B_global_std_wake_episodes = std(B_num_wake_episodes,'omitnan');
+B_global_std_sws_episodes  = std(B_num_sws_episodes,'omitnan');
+B_global_std_rems_episodes = std(B_num_rems_episodes,'omitnan');
+B_global_std_wake_epochs   = std(B_num_wake_epochs,'omitnan');
+B_global_std_sws_epochs    = std(B_num_sws_epochs,'omitnan');
+B_global_std_rems_epochs   = std(B_num_rems_epochs,'omitnan');
 
+W1_global_std_wake_length   = std(W1_mean_wake_length,'omitnan');
+W1_global_std_SWS_length    = std(W1_mean_SWS_length,'omitnan');
+W1_global_std_REM_length    = std(W1_mean_REM_length,'omitnan');
+W1_global_std_wake_episodes = std(W1_num_wake_episodes,'omitnan');
+W1_global_std_sws_episodes  = std(W1_num_sws_episodes,'omitnan');
+W1_global_std_rems_episodes = std(W1_num_rems_episodes,'omitnan');
+W1_global_std_wake_epochs   = std(W1_num_wake_epochs,'omitnan');
+W1_global_std_sws_epochs    = std(W1_num_sws_epochs,'omitnan');
+W1_global_std_rems_epochs   = std(W1_num_rems_epochs,'omitnan');
 
-W1_global_std_wake_length = std(W1_mean_wake_length);
-W1_global_std_SWS_length  = std(W1_mean_SWS_length);
-W1_global_std_REM_length  = std(W1_mean_REM_length);
-W1_global_std_wake_episodes = std(W1_num_wake_episodes);
+W2_global_std_wake_length   = std(W2_mean_wake_length,'omitnan');
+W2_global_std_SWS_length    = std(W2_mean_SWS_length,'omitnan');
+W2_global_std_REM_length    = std(W2_mean_REM_length,'omitnan');
+W2_global_std_wake_episodes = std(W2_num_wake_episodes,'omitnan');
+W2_global_std_sws_episodes  = std(W2_num_sws_episodes,'omitnan');
+W2_global_std_rems_episodes = std(W2_num_rems_episodes,'omitnan');
+W2_global_std_wake_epochs   = std(W2_num_wake_epochs,'omitnan');
+W2_global_std_sws_epochs    = std(W2_num_sws_epochs,'omitnan');
+W2_global_std_rems_epochs   = std(W2_num_rems_epochs,'omitnan');
 
+W3_global_std_wake_length   = std(W3_mean_wake_length,'omitnan');
+W3_global_std_SWS_length    = std(W3_mean_SWS_length,'omitnan');
+W3_global_std_REM_length    = std(W3_mean_REM_length,'omitnan');
+W3_global_std_wake_episodes = std(W3_num_wake_episodes,'omitnan');
+W3_global_std_sws_episodes  = std(W3_num_sws_episodes,'omitnan');
+W3_global_std_rems_episodes = std(W3_num_rems_episodes,'omitnan');
+W3_global_std_wake_epochs   = std(W3_num_wake_epochs,'omitnan');
+W3_global_std_sws_epochs    = std(W3_num_sws_epochs,'omitnan');
+W3_global_std_rems_epochs   = std(W3_num_rems_epochs,'omitnan');
 
-W2_global_std_wake_length = std(W2_mean_wake_length);
-W2_global_std_SWS_length  = std(W2_mean_SWS_length);
-W2_global_std_REM_length  = std(W2_mean_REM_length);
-W2_global_std_wake_episodes = std(W2_num_wake_episodes);
-
-
-W3_global_std_wake_length = std(W3_mean_wake_length);
-W3_global_std_SWS_length  = std(W3_mean_SWS_length);
-W3_global_std_REM_length  = std(W3_mean_REM_length);
-W3_global_std_wake_episodes = std(W3_num_wake_episodes);
-
-
-W4_global_std_wake_length = std(W4_mean_wake_length);
-W4_global_std_SWS_length  = std(W4_mean_SWS_length);
-W4_global_std_REM_length  = std(W4_mean_REM_length);
-W4_global_std_wake_episodes = std(W4_num_wake_episodes);
+W4_global_std_wake_length   = std(W4_mean_wake_length,'omitnan');
+W4_global_std_SWS_length    = std(W4_mean_SWS_length,'omitnan');
+W4_global_std_REM_length    = std(W4_mean_REM_length,'omitnan');
+W4_global_std_wake_episodes = std(W4_num_wake_episodes,'omitnan');
+W4_global_std_sws_episodes  = std(W4_num_sws_episodes,'omitnan');
+W4_global_std_rems_episodes = std(W4_num_rems_episodes,'omitnan');
+W4_global_std_wake_epochs   = std(W4_num_wake_epochs,'omitnan');
+W4_global_std_sws_epochs    = std(W4_num_sws_epochs,'omitnan');
+W4_global_std_rems_epochs   = std(W4_num_rems_epochs,'omitnan');
 
 % Now put the averages and std's together into vectors to make them easy to plot
 % Each vector contains 5 entries: B, W1, W2, W3, W4
 avg_wake_episodes_vs_time         = [B_global_av_wake_episodes W1_global_av_wake_episodes W2_global_av_wake_episodes W3_global_av_wake_episodes W4_global_av_wake_episodes];
+avg_SWS_episodes_vs_time          = [B_global_av_sws_episodes W1_global_av_sws_episodes W2_global_av_sws_episodes W3_global_av_sws_episodes W4_global_av_sws_episodes];
+avg_REMS_episodes_vs_time         = [B_global_av_rems_episodes W1_global_av_rems_episodes W2_global_av_rems_episodes W3_global_av_rems_episodes W4_global_av_rems_episodes];
+
+avg_wake_episode_duration_vs_time  = [B_global_av_wake_length    W1_global_av_wake_length    W2_global_av_wake_length    W3_global_av_wake_length    W4_global_av_wake_length];
 avg_SWS_episode_duration_vs_time  = [B_global_av_SWS_length    W1_global_av_SWS_length    W2_global_av_SWS_length    W3_global_av_SWS_length    W4_global_av_SWS_length];
 avg_REMS_episode_duration_vs_time = [B_global_av_REM_length    W1_global_av_REM_length    W2_global_av_REM_length    W3_global_av_REM_length    W4_global_av_REM_length];
 
-std_wake_episodes_vs_time  		  = [B_global_std_wake_episodes W1_global_std_wake_episodes W2_global_std_wake_episodes W3_global_std_wake_episodes W4_global_std_wake_episodes];
+avg_wake_epochs_vs_time         = [B_global_av_wake_epochs W1_global_av_wake_epochs W2_global_av_wake_epochs W3_global_av_wake_epochs W4_global_av_wake_epochs];
+avg_SWS_epochs_vs_time          = [B_global_av_sws_epochs  W1_global_av_sws_epochs  W2_global_av_sws_epochs  W3_global_av_sws_epochs  W4_global_av_sws_epochs];
+avg_REMS_epochs_vs_time         = [B_global_av_rems_epochs W1_global_av_rems_epochs W2_global_av_rems_epochs W3_global_av_rems_epochs W4_global_av_rems_epochs];
+
+std_wake_episodes_vs_time  		 = [B_global_std_wake_episodes W1_global_std_wake_episodes W2_global_std_wake_episodes W3_global_std_wake_episodes W4_global_std_wake_episodes];
+std_SWS_episodes_vs_time  		 = [B_global_std_sws_episodes  W1_global_std_sws_episodes  W2_global_std_sws_episodes  W3_global_std_sws_episodes  W4_global_std_sws_episodes];
+std_REMS_episodes_vs_time  		 = [B_global_std_rems_episodes W1_global_std_rems_episodes W2_global_std_rems_episodes W3_global_std_rems_episodes W4_global_std_rems_episodes];
+
+std_wake_episode_duration_vs_time = [B_global_std_wake_length   W1_global_std_wake_length   W2_global_std_wake_length   W3_global_std_wake_length   W4_global_std_wake_length];
 std_SWS_episode_duration_vs_time  = [B_global_std_SWS_length    W1_global_std_SWS_length    W2_global_std_SWS_length    W3_global_std_SWS_length    W4_global_std_SWS_length];
 std_REMS_episode_duration_vs_time = [B_global_std_REM_length    W1_global_std_REM_length    W2_global_std_REM_length    W3_global_std_REM_length    W4_global_std_REM_length];
 
+std_wake_epochs_vs_time         = [B_global_std_wake_epochs W1_global_std_wake_epochs W2_global_std_wake_epochs W3_global_std_wake_epochs W4_global_std_wake_epochs];
+std_SWS_epochs_vs_time          = [B_global_std_sws_epochs  W1_global_std_sws_epochs  W2_global_std_sws_epochs  W3_global_std_sws_epochs  W4_global_std_sws_epochs];
+std_REMS_epochs_vs_time         = [B_global_std_rems_epochs W1_global_std_rems_epochs W2_global_std_rems_epochs W3_global_std_rems_epochs W4_global_std_rems_epochs];
 
+% put each into the structs that get returned
+averages.num_w_episodes        = avg_wake_episodes_vs_time;
+averages.num_sws_episodes      = avg_SWS_episodes_vs_time;  
+averages.num_REMS_episodes     = avg_REMS_episodes_vs_time;  
+averages.wake_episode_duration = avg_wake_episode_duration_vs_time; 
+averages.SWS_episode_duration  = avg_SWS_episode_duration_vs_time;
+averages.REMS_episode_duration = avg_REMS_episode_duration_vs_time;
+averages.time_in_w    		   = avg_wake_epochs_vs_time*10/60;  % units are minutes
+averages.time_in_sws 		   = avg_SWS_epochs_vs_time*10/60;
+averages.time_in_rems 		   = avg_REMS_epochs_vs_time*10/60;
+
+stndev.num_w_episodes        = std_wake_episodes_vs_time;
+stndev.num_sws_episodes      = std_SWS_episodes_vs_time;  
+stndev.num_REMS_episodes     = std_REMS_episodes_vs_time;  
+stndev.wake_episode_duration = std_wake_episode_duration_vs_time;  
+stndev.SWS_episode_duration  = std_SWS_episode_duration_vs_time;
+stndev.REMS_episode_duration = std_REMS_episode_duration_vs_time;
+stndev.time_in_w    		 = std_wake_epochs_vs_time*10/60;  % units are minutes
+stndev.time_in_sws 		     = std_SWS_epochs_vs_time*10/60;
+stndev.time_in_rems 		 = std_REMS_epochs_vs_time*10/60;
+
+
+if makeplots 
 % Finally, plot it all
 figure
 %subplot(3,1,1)
@@ -274,7 +456,7 @@ set(gca,'box','off')
 ylabel({'REM sleep'; '(episode duration, seconds)'})
 title(shift)
 
-
+end 
 
 
 

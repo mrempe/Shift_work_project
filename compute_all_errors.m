@@ -1,4 +1,4 @@
-function E=compute_all_errors(params,actual)
+function E=compute_all_errors(params,actual,shift)
 %[num_w_episode_error,SWS_duration_error]=compute_all_errors(params,actual)
 
 % actual (experimental) values that I am comparing model output to
@@ -50,15 +50,53 @@ function E=compute_all_errors(params,actual)
 % SR_offset_idx = find(ismember(K_optimized_12_13.names,'SR_offset'));
 
 
-input_params.taui = 13;
-input_params.taud  = params(1);
-input_params.gamma = params(2);
-input_params.mu    = params(3);
-input_params.delta = params(4);
-input_params.c1    = params(5);
-input_params.c2    = params(6);
-input_params.WS_offset = params(7);
-input_params.SR_offset = params(8);
+% input_params.taui = 13;
+% input_params.taud  = params(1);
+% input_params.gamma = params(2);
+% input_params.mu    = params(3);
+% input_params.delta = params(4);
+% input_params.c1    = params(5);
+% input_params.c2    = params(6);
+% input_params.WS_offset = params(7);
+% input_params.SR_offset = params(8);
+
+% new version 12.20:  just optimize over taui, taud, and gamma
+% input_params.taui_baseline = 12.24;
+% input_params.taud_baseline = 3.23;
+
+% input_params.taui_work = params(1);
+% input_params.taud_work = params(2);
+% input_params.gamma = params(3);
+% input_params.mu    = 0.015;
+% input_params.delta = 0.002;;
+% input_params.c1    = 0.496;
+% input_params.c2    = 0.103;
+% input_params.WS_offset = 0.0044;
+% input_params.SR_offset = 0.0062;
+
+
+% version 1.5.18:  optimize over taui, taud, and three scaling factors for duration of W , SWS, and REM based on alertness or sleepiness
+input_params.taui_baseline = 17.1591 ;
+input_params.taud_baseline = 2.1871;
+input_params.alertness_duration_scale_factor_B = 0.6;
+input_params.sleepiness_duration_scale_factor_SWS_B = 1.133 ;
+input_params.sleepiness_duration_scale_factor_REMS_B = 1.1;
+
+
+input_params.alertness_duration_scale_factor_W = params(3);
+input_params.sleepiness_duration_scale_factor_SWS_W = params(4);
+input_params.sleepiness_duration_scale_factor_REMS_W = params(5);
+
+
+input_params.taui_work = params(1);
+input_params.taud_work = params(2);
+input_params.gamma = 3;
+input_params.mu    = 0.015;
+input_params.delta = 0.002;;
+input_params.c1    = 0.496;
+input_params.c2    = 0.103;
+input_params.WS_offset = 0.0044;
+input_params.SR_offset = 0.0062;
 
 
 
@@ -66,7 +104,7 @@ input_params.SR_offset = params(8);
 % [~,sleepstate,num_wake_episodesAW,mean_SWS_lengthAW,REMS_episode_duration_AW_averages,...
 % std_wake_episodes_vs_timeAW,std_SWS_episode_duration_vs_timeAW,REMS_episode_duration_AW_Std] = two_process_model_with_markov_chain(134,input_params,'AW',0);
 
-[~,~,sleep_measure_averages,sleep_measure_stds] = two_process_model_with_markov_chain(134,input_params,'AW',0);
+[~,~,sleep_measure_averages,sleep_measure_stds] = two_process_model_with_markov_chain(134,input_params,shift,0);
 
 sim_wake_episode_num = sleep_measure_averages.num_w_episodes;
 sim_SWS_episode_num  = sleep_measure_averages.num_sws_episodes;
@@ -104,42 +142,42 @@ gross_REMS_percentage_error = sim_REMS_percentage - actual.percent_in_rems;
 
 % ---- NUMBER OF EPISODES --------------
 % num of wake episodes error 
-NRMSE_w_episode = sqrt(mean((gross_num_W_episode_error).^2));
-NRMSE_w_episode = NRMSE_w_episode/(max(actual.num_wake_episodes)-min(actual.num_wake_episodes));
+NRMSE_w_episode = sqrt(mean((gross_num_W_episode_error(2:end)).^2));
+NRMSE_w_episode = NRMSE_w_episode/(max(actual.num_wake_episodes(2:end))-min(actual.num_wake_episodes(2:end)));
 
 % num of SWS episodes error
-NRMSE_sws_episode = sqrt(mean((gross_num_SWS_episode_error).^2));
-NRMSE_sws_episode = NRMSE_sws_episode/(max(actual.num_sws_episodes)-min(actual.num_sws_episodes));
+NRMSE_sws_episode = sqrt(mean((gross_num_SWS_episode_error(2:end)).^2));
+NRMSE_sws_episode = NRMSE_sws_episode/(max(actual.num_sws_episodes(2:end))-min(actual.num_sws_episodes(2:end)));
 
 % num of REMS episodes error
-NRMSE_rems_episode = sqrt(mean((gross_num_REMS_episode_error).^2));
-NRMSE_rems_episode = NRMSE_rems_episode/(max(actual.num_rems_episodes)-min(actual.num_rems_episodes));
+NRMSE_rems_episode = sqrt(mean((gross_num_REMS_episode_error(2:end)).^2));
+NRMSE_rems_episode = NRMSE_rems_episode/(max(actual.num_rems_episodes(2:end))-min(actual.num_rems_episodes(2:end)));
 
 % --- EPISODE DURATION -------------
 % wake episode duration error
-NRMSE_wake_duration = sqrt(mean((gross_wake_duration_error).^2));
-NRMSE_wake_duration = NRMSE_wake_duration/(max(actual.wake_episode_duration)-min(actual.wake_episode_duration));
+NRMSE_wake_duration = sqrt(mean((gross_wake_duration_error(2:end)).^2));
+NRMSE_wake_duration = NRMSE_wake_duration/(max(actual.wake_episode_duration(2:end))-min(actual.wake_episode_duration(2:end)));
 
 % SWS episode duration error
-NRMSE_SWS_duration = sqrt(mean((gross_SWS_duration_error).^2));
-NRMSE_SWS_duration = NRMSE_SWS_duration/(max(actual.sws_episode_duration)-min(actual.sws_episode_duration));
+NRMSE_SWS_duration = sqrt(mean((gross_SWS_duration_error(2:end)).^2));
+NRMSE_SWS_duration = NRMSE_SWS_duration/(max(actual.sws_episode_duration(2:end))-min(actual.sws_episode_duration(2:end)));
 
 % REMS episode duration error
-NRMSE_REMS_duration = sqrt(mean((gross_REMS_duration_error).^2));
-NRMSE_REMS_duration = NRMSE_REMS_duration/(max(actual.rems_episode_duration)-min(actual.rems_episode_duration));
+NRMSE_REMS_duration = sqrt(mean((gross_REMS_duration_error(2:end)).^2));
+NRMSE_REMS_duration = NRMSE_REMS_duration/(max(actual.rems_episode_duration(2:end))-min(actual.rems_episode_duration(2:end)));
 
 % --- PERCENTAGE OF TIME SPENT IN EACH STATE -------------
 % wake percentage error
-NRMSE_wake_percentage = sqrt(mean((gross_wake_percentage_error).^2));
-NRMSE_wake_percentage = NRMSE_wake_percentage/(max(actual.percent_in_wake)-min(actual.percent_in_wake));
+NRMSE_wake_percentage = sqrt(mean((gross_wake_percentage_error(2:end)).^2));
+NRMSE_wake_percentage = NRMSE_wake_percentage/(max(actual.percent_in_wake(2:end))-min(actual.percent_in_wake(2:end)));
 
 % SWS percentage error
-NRMSE_SWS_percentage = sqrt(mean((gross_SWS_percentage_error).^2));
-NRMSE_SWS_percentage = NRMSE_SWS_percentage/(max(actual.percent_in_sws)-min(actual.percent_in_sws));
+NRMSE_SWS_percentage = sqrt(mean((gross_SWS_percentage_error(2:end)).^2));
+NRMSE_SWS_percentage = NRMSE_SWS_percentage/(max(actual.percent_in_sws(2:end))-min(actual.percent_in_sws(2:end)));
 
 % REMS percentage error
-NRMSE_REMS_percentage = sqrt(mean((gross_REMS_percentage_error).^2));
-NRMSE_REMS_percentage = NRMSE_REMS_percentage/(max(actual.percent_in_rems)-min(actual.percent_in_rems));
+NRMSE_REMS_percentage = sqrt(mean((gross_REMS_percentage_error(2:end)).^2));
+NRMSE_REMS_percentage = NRMSE_REMS_percentage/(max(actual.percent_in_rems(2:end))-min(actual.percent_in_rems(2:end)));
 
 
 
@@ -164,3 +202,11 @@ NRMSE_REMS_percentage = NRMSE_REMS_percentage/(max(actual.percent_in_rems)-min(a
 % make the error a scalar so I can use single objective optimization
 % for use with fminsearch
 E = 0.1*E(1)+0.1*sum(E(2:end));
+
+
+% 12.20: only compute error for all measures during baseline (which is the first data point)
+%  E = [abs(gross_num_W_episode_error(1))   abs(gross_num_SWS_episode_error(1))  abs(gross_num_REMS_episode_error(1)) ...
+%       abs(gross_wake_duration_error(1))   abs(gross_SWS_duration_error(1))     abs(gross_REMS_duration_error(1)) ...
+%       abs(gross_wake_percentage_error(1)) abs(gross_SWS_percentage_error(1))   abs(gross_REMS_percentage_error(1))];
+% E = mean(E(1:3));
+

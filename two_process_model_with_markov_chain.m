@@ -1,4 +1,4 @@
-function [S,state,sleep_measure_averages,sleep_measure_stds]=two_process_model_with_markov_chain(total_time,input_params,shift,makeplots)
+function [S,state,long_wake_episode_timings,sleep_measure_averages,sleep_measure_stds]=two_process_model_with_markov_chain(total_time,input_params,shift,makeplots)
 % USAGE: [S,state,avg_wake_episodes_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time]=two_process_model_with_markov_chain(total_time,taui,taud,shift,makeplots)
 %
 % This function simulates the changes in sleep state using a markov chain model similar to Kemp and Kamphuisen SLEEP 1986
@@ -22,37 +22,27 @@ function [S,state,sleep_measure_averages,sleep_measure_stds]=two_process_model_w
 %
 %
 % UPDATE:  9.19.2017:  read in just one struct for all of the input parameters
-taui = input_params.taui;
-taud = input_params.taud;
-gamma = input_params.gamma;
-mu    = input_params.mu;
-delta = input_params.delta;
-c1    = input_params.c1;
-c2    = input_params.c2;
-WS_offset = input_params.WS_offset;
-SR_offset = input_params.SR_offset;  
+taui_baseline = input_params.taui_baseline;
+taud_baseline = input_params.taud_baseline;
+taui_work     = input_params.taui_work;
+taud_work     = input_params.taud_work;
 
-% ahat_W_S_base=input_params.ahat_W_S_base; %0.003;
-% ahat_S_W_base=input_params.ahat_S_W_base; %0.006;
-% ahat_W_R_base=input_params.ahat_W_R_base; %0.007;
-% ahat_R_W_base=input_params.ahat_R_W_base; %1.2374e-04;
-% ahat_S_R_base=input_params.ahat_S_R_base; %0.007;
-% ahat_R_S_base=input_params.ahat_R_S_base; %0.001;
+%WS_offset = input_params.WS_offset;
+%SR_offset = input_params.SR_offset;  
+alertness_duration_scale_factor_B       = input_params.alertness_duration_scale_factor_B;
+sleepiness_duration_scale_factor_SWS_B  = input_params.sleepiness_duration_scale_factor_SWS_B;  
+sleepiness_duration_scale_factor_REMS_B = input_params.sleepiness_duration_scale_factor_REMS_B; 
+alertness_duration_scale_factor_W       = input_params.alertness_duration_scale_factor_W;
+sleepiness_duration_scale_factor_SWS_W  = input_params.sleepiness_duration_scale_factor_SWS_W;  
+sleepiness_duration_scale_factor_REMS_W = input_params.sleepiness_duration_scale_factor_REMS_W;  
 
-ahat_W_S_base=0.003;
-ahat_S_W_base=0.006;
-ahat_W_R_base=0.007;
-ahat_R_W_base=1.2374e-04;
-ahat_S_R_base=0.007;
-ahat_R_S_base=0.001;
 
 
 
 
 % UPDATE:  9.26.2017:  output one structure for averages of all the sleep measures:  # of episodes, % of time, mean bout duration, etc. 
 %                      and one structure for all of the standard deviations.  
-%AW: [38 46 62 70 86 94 110 118]
-%RW: [26 34 50 58 74 82 98 106]
+
 
 
 if nargin == 3
@@ -67,6 +57,7 @@ end
 % --- Set up the time vector (with increments of 10 seconds)
 t=0:10/60/60:total_time;
 dt=10/60/60;
+phase = mod(t,24);
 num_days = total_time/24;
 % -----------------------------------------------------------
 
@@ -99,107 +90,6 @@ end
 
 
 
-% below are the estimates for the transition probabilities in units of 1/s
-% ahat_W_S =0.0033*10;
-
-
-% ahat_S_W =0.0114*10;
-
-
-% ahat_W_R =0.0039*10;
-
-
-% ahat_R_W =0;
-
-
-% ahat_S_R =0.0030*10;
-
-
-% ahat_R_S =0.0015*10;
-
-% ahat_W_S = 0.0023;
-
-
-% ahat_S_W = 0.0075;
-
-
-% ahat_W_R = 0.0022;
-
-
-% ahat_R_W = 3.1024e-04;
-
-
-% ahat_S_R = 0.0047;
-
-
-% ahat_R_S = 0.0019;
-
-
-% these estimates were developed using the first 12 hours of baseline, with both RW and AW. These are averages over all recordings.
-% ahat_W_S=0.0028;
-% ahat_S_W=0.0095;
-% ahat_W_R=0.0046;
-% ahat_R_W=3.6982e-04;
-% ahat_S_R=0.0043;
-% ahat_R_S=0.0022;
-
-% These estimates were developed using the first 24 hours of the recordings (baseline), with both RW and AW.  these are averages over all recordings.
-
-% ahat_W_S=0.0035;
-% ahat_S_W=0.0045;
-% ahat_W_R=0.0057;
-% ahat_R_W=1.2374e-04;
-% ahat_S_R=0.0047;
-% ahat_R_S=0.0023;
-% --------------------------------------------------------------
-
-% These are estimates that I developed to match baseline episode duration.  I modified the numbers found using first 24 hours with both AW and RW
-% initialize each of the ahat values (using optimized ahat base values)
-ahat_W_S=ahat_W_S_base;
-ahat_S_W=ahat_S_W_base;
-ahat_W_R=ahat_W_R_base;
-ahat_R_W=ahat_R_W_base;
-ahat_S_R=ahat_S_R_base;
-ahat_R_S=ahat_R_S_base;
-
-
-% ahat_W_S=0.004;
-% ahat_S_W=0.006;
-% ahat_W_R=0.007;
-% ahat_R_W=1.2374e-04;
-% ahat_S_R=0.007;
-% ahat_R_S=0.0035;
-
-%% I commented these out 9.26.17 since I am now optimizing these values.  they get read in to this function now.  
-% ahat_W_S_base=0.004;
-% ahat_W_S_base=0.003;
-% ahat_S_W_base=0.006;
-% ahat_W_R_base=0.007;
-% ahat_R_W_base=1.2374e-04;
-% ahat_S_R_base=0.007;
-% ahat_R_S_base=0.001;
-% Now make the ahat values for SWS depend on S-C, a measure of sleepiness from Achermann 2004.  Wake depends on 1-S+C, a measure of alertness from Achermann 2004
-% REMS ahat value depends on 1-C, only on the circadian curve.    
-% *****  ahat_R_S = alpha*(S-C)
-% *****  ahat_R_W = beta*(S-C)
-% *****  ahat_S_W = gamma*(S-C)
-% *****  ahat_S_R = delta*(S-C)
-% *****  ahat_W_S = sigma*(1-S+C)  wake percentages prop. to C-S not S-C
-% *****  ahat_W_R = mu*(1-S+C)
-alpha = 0.0035/0.73;
-alpha = .0015/0.73;
-
-%alpha=alpha*.75;    % I'm using 1.1 because that is the value of 1-C when REMS percentage should be about at what you get when you use ahat_R_S_base
-beta  = 1.2e-4/0.73;
-%gamma = 0.007/0.3;
-%gamma = 3;  
-%delta = mu/4;
-%sigma = 0.004/0.65;
-%mu    = 0.007/0.65;
-
-
-D = 1/1.3;  % power law for Wake episode durations from Lo PNAS 2004 -1-1/D = -2.3.  See figure 2a of Lo PNAS 2004
-
 % -----  Circadian curve -----
 circ_amp = 0.25; %0.128;
 circ_curve = circ_amp*sin((pi/12)*-t);
@@ -208,7 +98,7 @@ C = circ_curve;
 
 
 
-num_simulations = 50;  % was 100
+num_simulations = 50; %50;  % was 100
 % ----- Initialize S, state and C
 state(1,:) = char(repmat('S',1,num_simulations));   % initialize the first row of state matrix to S
 S=zeros(length(t),num_simulations);
@@ -218,135 +108,51 @@ S(1,:) = 0.3;					% starting value for S, the homeostat
 
 % Set up the random variables in a power law for W episode duration
 % I found these values using the MATLAB function dfittool.m. Units are in seconds.
-pd = makedist('GeneralizedPareto','k',0.267395,'sigma',20.1499,'theta',1);
-
-% ----- Tau values that depend on time based on our simple two-process modeling -----
-% if strcmp(shift,'AW')
-% 	%taui = zeros(size(t));
-% 	taud = zeros(size(t));
-% 	%taui(1:8640) = 12.47;
-% 	%taui(8641:end) = 10.855;
-% 	taud(1:16560) = 3.2;
-% 	taud(16561:end) = 5.4;
-% 	%taui_work = taui;
-% end 
-% if strcmp(shift,'RW')
-% 	%taui=zeros(size(t));
-% 	taud=zeros(size(t));
-% 	%taui(1:8640) = 13.62;
-% 	%taui(8641:end) = 9.65;
-% 	taud(1:12240) = 3.2;
-% 	taud(12241:end) = 5.4;
-% 	%taui_work = taui;
-% end 
-taui = taui*ones(size(t));
-taud = taud*ones(size(t));
-taui(8641:end)=taui(1)-0.1*taui(1);
-taud(8641:end)=taud(1)-0.1*taud(1);  %reduce taui and taud by 10% after the baseline day.  consistent with Process S results
+pd_w = makedist('GeneralizedPareto','k',0.231707,'sigma',217.976,'theta',1);
+% or try k=0.231707 and sigma = 217.976 k=0.267395, sigma=20.1499
+pd_s = makedist('Burr','alpha',177.113,'c',4.10314,'k',1.48324);
+pd_r = makedist('Burr','alpha',172.817,'c',2.629,'k',4.75);
 
 
 
+taui = taui_baseline*ones(size(t));
+taud = taud_baseline*ones(size(t));
+alertness_duration_scale_factor = ones(size(t));
+sleepiness_duration_scale_factor_SWS = ones(size(t));
+sleepiness_duration_scale_factor_REMS = ones(size(t));
 
-% new version of ahat_W_S and ahat_W_R
-% instead of a linear function of alertness (1-S+C) make them 
-% nonlinear functions that nearly match the linear form for
-% values of alertness in the normal range, but then get more extreme
-% farther from that range.
-% ahat_W_S = c1*(alertness-0.7)^3+0.006*(alertness-0.7)+0.0042;
-% where c1 can be varied. 
-% c1=0.5;
-% c2=0.5;
-% c3=0.5;
-% c4=0.5;
-% c1=0.5;
-% c2=0.1;
-% c3=0.5;
-% c4=0.1;
-% WS_offset=0.0042;
-% SR_offset=0.006;
 
-% 0.5
-% 0.1
-% 0.5
-% 0.1
+taui(1:8640)   = taui_baseline;
+taui(8641:end) = taui_work;
+taud(1:8640)   = taud_baseline;
+taud(8641:end) = taud_work;
+
+
+
+alertness_duration_scale_factor(1:8640) = alertness_duration_scale_factor_B; 
+alertness_duration_scale_factor(8641:end) = alertness_duration_scale_factor_W;
+sleepiness_duration_scale_factor_SWS(1:8640) = sleepiness_duration_scale_factor_SWS_B;
+sleepiness_duration_scale_factor_SWS(8641:end) = sleepiness_duration_scale_factor_SWS_W;
+sleepiness_duration_scale_factor_REMS(1:8640) = sleepiness_duration_scale_factor_REMS_B;
+sleepiness_duration_scale_factor_REMS(8641:end) = sleepiness_duration_scale_factor_REMS_W; 
+
+
+
+
 
 long_wake_episode_timings = zeros(size(t));
 % Run the MC simulation for several different runs, each column corresponds to a different run
 for run = 1:num_simulations
-	%clear ahat_*
+	num_R_runs = 0;
 	i=1;
 	long_wake_counter(run) = 0;
 	long_wake_episode_timings = zeros(size(t));
 	while i<length(t)
 		
-		% first update the transition rates
-		 %%ahat_R_S(i) = alpha*(1-1.4*C(i));
-		ahat_R_S(i) = 0.002;  %testing: 11.7.2017  REMS percentages don't have much circadian dependence
-		% ahat_R_W(i) = beta *(1-C(i));
-		%ahat_R_S(i) = alpha*(1-S(i,run));
-		 % ahat_R_S(i) = c1*(1-S(i,run)-0.7)*(1-S(i,run)-0.7)*(1-S(i,run)-0.7)+0.00479*(1-S(i,run)-0.7)+0.003356;
-		 if ahat_R_S(i) <= 0
-		 	ahat_R_S(i) = ahat_R_S_base/10;
-		 end 
-		%ahat_R_S(i) = ahat_R_S_base;
-
-		%ahat_R_S(i) = ahat_R_S_base;
-		%ahat_R_W(i) = beta *(1-S(i,run));
-		%ahat_R_W(i) = ahat_R_W_base;
-		ahat_S_W(i) = gamma*(S(i,run)-C(i))+((1/600)-gamma*0.2);  % the (1/600)-gamma*0.2 ensures that the smallest vale of ahat_S_W gives 
-																  % a W episode of about 10 minutes, matching Lo et al PNAS 2004
+		
 		sleepiness = S(i,run)-C(i);
-		% if sleepiness <= 0.3
-			 %ahat_S_W(i) = c1*(sleepiness-0.3)*(sleepiness-0.3)*(sleepiness-0.3)+0.0233*(sleepiness-0.3)+0.005;
-			 if ahat_S_W(i) <= 0
-			 	ahat_S_W(i) = ahat_S_W_base/10;
-			 end 
-			ahat_S_R(i) = delta*(S(i,run)-C(i));  %update 12.5.17 to be more consistent with ahat_WR
-			%ahat_S_R(i) = c2*(sleepiness-0.3)*(sleepiness-0.3)*(sleepiness-0.3)+0.0233*(sleepiness-0.3)+SR_offset; %+0.006;
-		
-			if ahat_S_R(i) <= 0
-				ahat_S_R(i) = ahat_S_R_base/10;
-			end
-		
-		% ahat_S_W(i) = gamma*(S(i,run)-C(i));
-		% ahat_S_R(i) = delta*(S(i,run)-C(i));
- 	% 	if ahat_S_W(i) <= 0
-		% 	 ahat_S_W(i) = ahat_S_W_base/10;
-		% end 
-		% if ahat_S_R(i) <= 0
-		% 	ahat_S_R(i) = ahat_S_R_base/10;
-		% end
-
-
-		% else
-		% 	ahat_S_W(i) = gamma*(S(i,run)-C(i))-0.0010;
-		% 	ahat_S_R(i) = delta*(S(i,run)-C(i));
-		% end 
-		%ahat_S_R(i) = ahat_S_R_base;
-		%ahat_W_S(i) = sigma*(1-S(i,run)+C(i));  
-		% ahat_W_R(i) = mu   *(1-S(i,run)+C(i));
 		alertness = 1-S(i,run)+C(i);
-		%ahat_W_S(i) = sigma*alertness;
-		% ahat_W_S(i) = c3*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.006*(alertness-0.7)+0.0042;
-		% ahat_W_S(i) = ahat_W_S(i)+ 0.01;% + .0025;
-		% if ahat_W_S(i) <=0
-		% ahat_W_S(i) =   ahat_W_S_base/10;  % don't let ahat be negative. limit its minimum to be 1/10 of the base value
-		% end
-		% %ahat_W_R(i) = mu *(1-S(i,run)+C(i));
-		% ahat_W_R(i) = c4*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.01*(alertness-0.7)+0.007;
-		% ahat_W_R(i) = ahat_W_R(i) + 0.005;
-		% if ahat_W_R(i) <= 0
-		% 	ahat_W_R(i) = ahat_W_R_base/10;
-		% end
-
-		ahat_W_S(i) = c1*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.006*(alertness-0.7)+WS_offset; %+0.0042;
-		ahat_W_R(i) = mu   *(1-S(i,run)+C(i));
-		if ahat_W_S(i) <=0
-			ahat_W_S(i) =   ahat_W_S_base/10;  % don't let ahat be negative. limit its minimum to be 1/10 of the base value
-		end
-		if ahat_W_R(i) <= 0
-			ahat_W_R(i) = ahat_W_R_base/10;
-		end
+		
 
 		if state(i,run)=='W'
 			% rare long wake episode (uniformly distributed between 5 minutes and 30 minutes which is 30 epochs and 180 epochs)  (b-a)*u+a gives
@@ -366,91 +172,84 @@ for run = 1:num_simulations
 				end
 				long_wake_counter(run) = long_wake_counter(run)+1;
 				long_wake_episode_timings(i) = 1;    
-
+				
 			else  % normal markov chain 
-				%x=rand(2,1);
-				% W_RW = -log(x(1))/ahat_R_W(i);  %exponential
-				% W_SW = -log(x(2))/ahat_S_W(i);
-				% W_RW = rand^(-D)/ahat_R_W_base;  %power law using rand
-				% W_SW = rand^(-D)/ahat_S_W(i);
+				
 				% new idea, choose the next state and the bout duration separately
 				if rand < 0.135*sleepiness-0.0135
 					% go to REMS
-					W_shortest_epochs = random(pd)/10;
 					next_state = 'R';
 				else
-					W_shortest_epochs = random(pd)/10;
 					next_state = 'S';
 				end 
-
-				%Wshortest_epochs = ceil(min([W_RW W_SW])/10);  % divide by 10 to get epochs, not seconds.
+				Wshortest_epochs = round((random(pd_w)/10)*alertness_duration_scale_factor(i)*(alertness+0.3)-1);  % scaling by alertness since W bout durations are a function of alertness
 				if Wshortest_epochs <= 0 
 					Wshortest_epochs = 1;
-					warning('Wshortest_epochs<0 in W') 
+					%warning('Wshortest_epochs<=0 in W') 
 				end 
 				if i+Wshortest_epochs > length(t) 
 					Wshortest_epochs = length(t)-i; 
 				
 				end % truncate if the wait time puts you past the end of t
-				% if W_RW < W_SW
-				% 	next_state = 'R';
-				% else
-				% 	next_state = 'S';
-				% end
-				%state(i+1:i+Wshortest_epochs,run)=repmat('W',Wshortest_epochs,1);
+				
 				state(i+1:i+Wshortest_epochs,run)='W';
 				state(i+Wshortest_epochs+1,run)=next_state;  % after the run of Wake is finished set the next state depending on which W was shortest
 				for j=1:Wshortest_epochs				 % update the homeostat
 					S(i+j,run)=1-(1-S(i+j-1,run))*exp(-dt/taui(i));
 				end
+				
 			end % end of normal markov chain case (not long W episode)
 
 
 		elseif state(i,run)=='S'
-			
-
-			
-			x=rand(2,1);
-			W_RS = -log(x(1))/ahat_R_S(i);
-			W_WS = -log(x(2))/ahat_W_S(i);
-			Wshortest_epochs = ceil(min([W_RS W_WS])/10);
+			% choose the next state and the bout duration separately
+			% looking at the baseline data, S is initally equally likely to transition to R or W, but throughout
+			% the 24 hour baseline, W becomes more likely in a linear fashion.  
+			% the line is given by y = (-0.17/24)*(t) + 0.5
+			if rand < -0.007*phase+0.51
+				% go to REMS
+				next_state = 'R';
+			else
+				next_state = 'W';
+			end 
+			Wshortest_epochs = round((random(pd_s)/10)*sleepiness_duration_scale_factor_SWS(i)*(sleepiness+0.7)-1); % the /10 is to get epochs not seconds.  multiplty by sleepiness since S bout duration scales with sleepiness. 0.7 to get sleepiness to average 1.
+																	% may need a scale factor here: scale*(sleepiness+0.7)
+																	% minus one because we already have one epoch of S from end of previous run
 			if Wshortest_epochs <= 0 
 				Wshortest_epochs = 1;
-				warning('Wshortest_epochs<0 in S') 
+				%warning('Wshortest_epochs<=0 in S') 
 			end 
 			if i+Wshortest_epochs > length(t) 
 				Wshortest_epochs = length(t)-i; 
 			end % truncate if the wait time puts you past the end of t
-			if W_RS < W_WS
-				next_state = 'R';
-			else
-				next_state = 'W';
-			end
+			
 			state(i+1:i+Wshortest_epochs,run)='S';
 			state(i+Wshortest_epochs+1,run)=next_state;  % after the run of S is finished set the next state depending on which W was shortest
 			for j=1:Wshortest_epochs
 				S(i+j,run) = S(i+j-1,run)*exp(-dt/taud(i));
 			end
-
+			
 	
 
 		elseif state(i,run)=='R'
-			x=rand(2,1);
-			W_WR = -log(x(1))/ahat_W_R(i);
-			W_SR = -log(x(2))/ahat_S_R(i);
-			Wshortest_epochs = ceil(min([W_WR W_SR])/10);
+			num_R_runs = num_R_runs+1;
+			
+			if rand < 0.5  % R is equally likely to go to W or S (found from baseline data)
+				% go to REMS
+				next_state = 'W';
+			else
+				next_state = 'S';
+			end 
+			Wshortest_epochs = round((random(pd_r)/10)*sleepiness_duration_scale_factor_REMS(i)*(sleepiness+0.7)-1); %minus 1 because we already have one epoch that is R
+			
 			if Wshortest_epochs <= 0 
 				Wshortest_epochs = 1;
-				warning('Wshortest_epochs<0 in R') 
+				%warning('Wshortest_epochs<=0 in R') 
 			end 
 			if i+Wshortest_epochs > length(t) 
 				Wshortest_epochs = length(t)-i; 
 			end % truncate if the wait time puts you past the end of t
-			if W_WR < W_SR
-				next_state = 'W';
-			else
-				next_state = 'S';
-			end
+			
 			state(i+1:i+Wshortest_epochs,run)='R';
 			state(i+Wshortest_epochs+1,run)=next_state;  % after the run of REMS is finished set the next state depending on which W was shortest
 			for j=1:Wshortest_epochs				 % update the homeostat
@@ -475,47 +274,19 @@ for run = 1:num_simulations
 			end
 		end
 
-		% update the ahat values, since S has been updated
+		% update sleepiness and alertness values, since S has been updated
 		for j=1:Wshortest_epochs				 % update the homeostat
-			%old
-			% ahat_S_W(i+j) = gamma*(S(i+j,run)-C(i));
-			% ahat_S_R(i+j) = delta*(S(i+j,run)-C(i));
-			% %ahat_W_S(i+j) = sigma*(1-S(i+j,run)+C(i));  
-			% alertness = 1-S(i+j,run)+C(i);
-			% ahat_W_S(i+j) = c1*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.006*(alertness-0.7)+0.0042;
-			% ahat_W_R(i+j) = mu   *(1-S(i+j,run)+C(i));
-		
-
 			% new
 			sleepiness = S(i+j,run)-C(i+j);
 			alertness = 1-S(i+j,run)+C(i);
-			ahat_S_W(i+j) = gamma*(sleepiness)+((1/600)-gamma*0.2);
-			%ahat_S_W(i+j) = c1*((S(i+j,run)-C(i))-0.3)*((S(i+j,run)-C(i))-0.3)*((S(i+j,run)-C(i))-0.3)+0.0233*((S(i+j,run)-C(i))-0.3)+0.006;
-			
-			ahat_S_R(i+j) = c2*(sleepiness-0.3)*(sleepiness-0.3)*(sleepiness-0.3)+0.0233*(sleepiness-0.3)+SR_offset; %+0.006;
-			%ahat_S_R(i+j) = c2*((S(i+j,run)-C(i))-0.3)*((S(i+j,run)-C(i))-0.3)*((S(i+j,run)-C(i))-0.3)+0.0233*((S(i+j,run)-C(i))-0.3)+0.006;
-			
-			ahat_W_S(i+j) = c1*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.006*(alertness-0.7)+WS_offset; %+0.0042;
-
-			%ahat_W_S(i+j) = c3*(alertness-0.7)*(alertness-0.7)*(alertness-0.7)+0.006*(alertness-0.7)+0.0042;
-			%ahat_W_S(i+j) = ahat_W_S(i)+ 0.002;%
-			if ahat_W_S(i+j) <=0
-				ahat_W_S(i+j) =   ahat_W_S_base/10;  % don't let ahat be negative. limit its minimum to be 1/10 of the base value
-			end
-			%ahat_W_R(i) = mu *(1-S(i,run)+C(i));
-			ahat_W_R(i+j) = mu*alertness;
-			
-			if ahat_W_R(i+j) <= 0
-				ahat_W_R(i+j) = ahat_W_R_base/10;
-			end
-
 		end
 
 
 
 		i=i+Wshortest_epochs+1;
+	clear Wshortest_epochs
 	end
-long_wake_counter;
+
 end  % looping over num_simulations
 
 
@@ -538,16 +309,22 @@ av_REM_percentage  = mean(REM_percentage);
 % [avg_wake_episodes_vs_time,avg_SWS_episodes_vs_time,avg_REMS_episodes_vs_time,...
 %  avg_wake_episode_duration_vs_time,avg_SWS_episode_duration_vs_time,avg_REMS_episode_duration_vs_time,...
 %  std_wake_episodes_vs_time,std_SWS_episode_duration_vs_time,std_REMS_episode_duration_vs_time] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations,makeplots);
-[sleep_measure_averages,sleep_measure_stds] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations,makeplots);
+[sleep_measure_averages,sleep_measure_stds] = group_and_plot_Wepisodes_SWS_REMS_duration(shift,state,num_simulations,0);
+
+
 
 
 if makeplots
 	
 	% ---- first make a shaded plot showing average trace of the homeostat ----
 	if length(S) > length(t)
-		difflength = length(S)- length(t);
-		tnew = [t t(end)+dt:dt:t(end)+difflength*dt];
-		circ_curvenew = circ_amp*sin((pi/12)*-tnew);
+		% disp('S is longer than t')
+		% difflength = length(S)- length(t);
+		% tnew = [t t(end)+dt:dt:t(end)+difflength*dt];
+		% circ_curvenew = circ_amp*sin((pi/12)*-tnew);
+		S = S(1:length(t),:);
+		tnew = t;
+		circ_curvenew = circ_curve;
 	else
 		tnew = t;
 		circ_curvenew = circ_curve;
@@ -614,7 +391,7 @@ if makeplots
 	hold on
 	longw_locs = find(long_wake_episode_timings);
 	%disp(['Longw_locs has ', num2str(length(longw_locs))])
-	plot(t(longw_locs),0.9*long_wake_episode_timings(longw_locs),'*','MarkerSize',16)
+	plot(t(longw_locs),0.9*long_wake_episode_timings(longw_locs),'.','MarkerSize',16)
 	hold off
 	set(p,'linewidth',1.5)
 	ax=gca;
@@ -635,6 +412,7 @@ if makeplots
 	set(gca,'box','off')
 	set(gca,'color','none')
 	xlabel('TIME (H)')
+	axis([0 140 -0.1 1.75])
 
 	% add gray bars indicating work periods
 	hold on
@@ -661,37 +439,14 @@ if makeplots
 	end
 	hold off 
 	
-	
-	%plot(tnew',circ_curvenew'./mean(S,2)+1)
-	% plot(tnew',1-mean(S,2))
-	% ax=gca;
-	% ax.XTick = 0:12:t(end);
-	% title('1-S')
-	% grid on
-	
-	% TEST: plot the ahat values over time
- 	% figure
- 	% size(ahat_R_S)
- 	% size(ahat_W_S)
- 	% size(t)
- 	% plot(tnew,ahat_R_S,tnew,ahat_W_S,'r',tnew,ahat_W_R,'y',tnew,ahat_S_R,'k')
- 	% legend('ahatRS','ahatWS','ahatWR','ahatSR')
-
 
 
 	% ---- Then make a colored shaded plot of percentages of states, like Figure 5 in the experimental manuscript
-	% compute sleep state percentages of each two-hour window (averaged for each window over all runs of the simulation) 
-	% if strcmp(shift,'RW')
-	% 	index = find(t==120)
-	% 	t=t(1:index);
-	% 	state=state(1:index);
-	
-	% end 
 	make_shaded_state_percentages_plot(t,state,sleep_dep_start_stop_times)
 
 end
 
-clear long_wake_episode_timings long_wake_counter longw_locs
+clear long_wake_counter longw_locs
 
 disp('end of two_process_model_with_markov_chain')
 

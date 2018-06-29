@@ -28,11 +28,11 @@ for j=1:num_simulations
 	W4_runs = contiguous(state(W4_indices,j),['W' 'S' 'R']);
 
 	% only consider W and SWS runs of 3 epochs or longer and REMS runs of 2 epochs or longer
-	baseline_runs = remove_short_runs(baseline_runs);
-	W1_runs = remove_short_runs(W1_runs);
-	W2_runs = remove_short_runs(W2_runs);
-	W3_runs = remove_short_runs(W3_runs);
-	W4_runs = remove_short_runs(W4_runs);
+	% baseline_runs = remove_short_runs(baseline_runs);
+	% W1_runs = remove_short_runs(W1_runs);
+	% W2_runs = remove_short_runs(W2_runs);
+	% W3_runs = remove_short_runs(W3_runs);
+	% W4_runs = remove_short_runs(W4_runs);
 
 
 
@@ -254,6 +254,58 @@ for j=1:num_simulations
 end  % end of looping over num_simulations
 
 
+
+% --- Compute number of transitions between states in each day --- 
+for j=1:num_simulations
+	W2Sbaseline(j) = length(strfind(state(1:8640,j)','WS')); % baseline
+	W2Rbaseline(j) = length(strfind(state(1:8640,j)','WR'));
+	S2Wbaseline(j) = length(strfind(state(1:8640,j)','SW'));
+	S2Rbaseline(j) = length(strfind(state(1:8640,j)','SR'));
+	R2Wbaseline(j) = length(strfind(state(1:8640,j)','RW'));
+	R2Sbaseline(j) = length(strfind(state(1:8640,j)','RS'));
+
+	W2S_W1(j) = length(strfind(state(8641:17281,j)','WS')); % W1
+	W2R_W1(j) = length(strfind(state(8641:17281,j)','WR'));
+	S2W_W1(j) = length(strfind(state(8641:17281,j)','SW'));
+	S2R_W1(j) = length(strfind(state(8641:17281,j)','SR'));
+	R2W_W1(j) = length(strfind(state(8641:17281,j)','RW'));
+	R2S_W1(j) = length(strfind(state(8641:17281,j)','RS'));
+
+	W2S_W2(j) = length(strfind(state(17282:25921,j)','WS')); % W2
+	W2R_W2(j) = length(strfind(state(17282:25921,j)','WR'));
+	S2W_W2(j) = length(strfind(state(17282:25921,j)','SW'));
+	S2R_W2(j) = length(strfind(state(17282:25921,j)','SR'));
+	R2W_W2(j) = length(strfind(state(17282:25921,j)','RW'));
+	R2S_W2(j) = length(strfind(state(17282:25921,j)','RS'));
+
+	W2S_W3(j) = length(strfind(state(25922:34561,j)','WS')); % W3
+	W2R_W3(j) = length(strfind(state(25922:34561,j)','WR'));
+	S2W_W3(j) = length(strfind(state(25922:34561,j)','SW'));
+	S2R_W3(j) = length(strfind(state(25922:34561,j)','SR'));
+	R2W_W3(j) = length(strfind(state(25922:34561,j)','RW'));
+	R2S_W3(j) = length(strfind(state(25922:34561,j)','RS'));
+
+	W2S_W4(j) = length(strfind(state(34562:43201,j)','WS')); % W4
+	W2R_W4(j) = length(strfind(state(34562:43201,j)','WR'));
+	S2W_W4(j) = length(strfind(state(34562:43201,j)','SW'));
+	S2R_W4(j) = length(strfind(state(34562:43201,j)','SR'));
+	R2W_W4(j) = length(strfind(state(34562:43201,j)','RW'));
+	R2S_W4(j) = length(strfind(state(34562:43201,j)','RS'));
+
+end 
+
+
+% TEST  save raw transition data to .mat file
+% if strcmp(shift,'AW')
+% 	save('raw_transition_data_AW.mat', 'W2S*', 'W2R*', 'S2W*', 'S2R*', 'R2W*', 'R2S*') 
+% elseif strcmp(shift,'RW')
+% 	save('raw_transition_data_RW.mat', 'W2S*', 'W2R*', 'S2W*', 'S2R*', 'R2W*', 'R2S*')
+% end
+
+
+
+
+
 % average over the simulations
 B_global_av_wake_length   = mean(B_mean_wake_length,'omitnan');
 B_global_av_SWS_length    = mean(B_mean_SWS_length,'omitnan');
@@ -264,6 +316,7 @@ B_global_av_rems_episodes = mean(B_num_rems_episodes,'omitnan');
 B_global_av_wake_epochs   = mean(B_num_wake_epochs,'omitnan');
 B_global_av_sws_epochs    = mean(B_num_sws_epochs,'omitnan');
 B_global_av_rems_epochs   = mean(B_num_rems_epochs,'omitnan');
+
 
 W1_global_av_wake_length   = mean(W1_mean_wake_length,'omitnan');
 W1_global_av_SWS_length    = mean(W1_mean_SWS_length,'omitnan');
@@ -304,6 +357,9 @@ W4_global_av_rems_episodes = mean(W4_num_rems_episodes,'omitnan');
 W4_global_av_wake_epochs   = mean(W4_num_wake_epochs,'omitnan');
 W4_global_av_sws_epochs    = mean(W4_num_sws_epochs,'omitnan');
 W4_global_av_rems_epochs   = mean(W4_num_rems_epochs,'omitnan');
+
+
+
 
 % std's over the simulations
 B_global_std_wake_length   = std(B_mean_wake_length,'omitnan');
@@ -356,6 +412,11 @@ W4_global_std_wake_epochs   = std(W4_num_wake_epochs,'omitnan');
 W4_global_std_sws_epochs    = std(W4_num_sws_epochs,'omitnan');
 W4_global_std_rems_epochs   = std(W4_num_rems_epochs,'omitnan');
 
+
+
+
+
+
 % Now put the averages and std's together into vectors to make them easy to plot
 % Each vector contains 5 entries: B, W1, W2, W3, W4
 avg_wake_episodes_vs_time         = [B_global_av_wake_episodes W1_global_av_wake_episodes W2_global_av_wake_episodes W3_global_av_wake_episodes W4_global_av_wake_episodes];
@@ -370,6 +431,14 @@ avg_wake_epochs_vs_time         = [B_global_av_wake_epochs W1_global_av_wake_epo
 avg_SWS_epochs_vs_time          = [B_global_av_sws_epochs  W1_global_av_sws_epochs  W2_global_av_sws_epochs  W3_global_av_sws_epochs  W4_global_av_sws_epochs];
 avg_REMS_epochs_vs_time         = [B_global_av_rems_epochs W1_global_av_rems_epochs W2_global_av_rems_epochs W3_global_av_rems_epochs W4_global_av_rems_epochs];
 
+avg_W2S_transitions = [mean(W2Sbaseline) mean(W2S_W1) mean(W2S_W2) mean(W2S_W3) mean(W2S_W4)];
+avg_W2R_transitions = [mean(W2Rbaseline) mean(W2R_W1) mean(W2R_W2) mean(W2R_W3) mean(W2R_W4)];
+avg_S2W_transitions = [mean(S2Wbaseline) mean(S2W_W1) mean(S2W_W2) mean(S2W_W3) mean(S2W_W4)];
+avg_S2R_transitions = [mean(S2Rbaseline) mean(S2R_W1) mean(S2R_W2) mean(S2R_W3) mean(S2R_W4)];
+avg_R2W_transitions = [mean(R2Wbaseline) mean(R2W_W1) mean(R2W_W2) mean(R2W_W3) mean(R2W_W4)];
+avg_R2S_transitions = [mean(R2Sbaseline) mean(R2S_W1) mean(R2S_W2) mean(R2S_W3) mean(R2S_W4)];
+
+
 std_wake_episodes_vs_time  		 = [B_global_std_wake_episodes W1_global_std_wake_episodes W2_global_std_wake_episodes W3_global_std_wake_episodes W4_global_std_wake_episodes];
 std_SWS_episodes_vs_time  		 = [B_global_std_sws_episodes  W1_global_std_sws_episodes  W2_global_std_sws_episodes  W3_global_std_sws_episodes  W4_global_std_sws_episodes];
 std_REMS_episodes_vs_time  		 = [B_global_std_rems_episodes W1_global_std_rems_episodes W2_global_std_rems_episodes W3_global_std_rems_episodes W4_global_std_rems_episodes];
@@ -382,6 +451,15 @@ std_wake_epochs_vs_time         = [B_global_std_wake_epochs W1_global_std_wake_e
 std_SWS_epochs_vs_time          = [B_global_std_sws_epochs  W1_global_std_sws_epochs  W2_global_std_sws_epochs  W3_global_std_sws_epochs  W4_global_std_sws_epochs];
 std_REMS_epochs_vs_time         = [B_global_std_rems_epochs W1_global_std_rems_epochs W2_global_std_rems_epochs W3_global_std_rems_epochs W4_global_std_rems_epochs];
 
+std_W2S_transitions = [std(W2Sbaseline) std(W2S_W1) std(W2S_W2) std(W2S_W3) std(W2S_W4)];
+std_W2R_transitions = [std(W2Rbaseline) std(W2R_W1) std(W2R_W2) std(W2R_W3) std(W2R_W4)];
+std_S2W_transitions = [std(S2Wbaseline) std(S2W_W1) std(S2W_W2) std(S2W_W3) std(S2W_W4)];
+std_S2R_transitions = [std(S2Rbaseline) std(S2R_W1) std(S2R_W2) std(S2R_W3) std(S2R_W4)];
+std_R2W_transitions = [std(R2Wbaseline) std(R2W_W1) std(R2W_W2) std(R2W_W3) std(R2W_W4)];
+std_R2S_transitions = [std(R2Sbaseline) std(R2S_W1) std(R2S_W2) std(R2S_W3) std(R2S_W4)];
+
+
+
 % put each into the structs that get returned
 averages.num_w_episodes        = avg_wake_episodes_vs_time;
 averages.num_sws_episodes      = avg_SWS_episodes_vs_time;  
@@ -392,6 +470,14 @@ averages.REMS_episode_duration = avg_REMS_episode_duration_vs_time;
 averages.time_in_w    		   = avg_wake_epochs_vs_time*10/60;  % units are minutes
 averages.time_in_sws 		   = avg_SWS_epochs_vs_time*10/60;
 averages.time_in_rems 		   = avg_REMS_epochs_vs_time*10/60;
+averages.W2S_transitions       = avg_W2S_transitions;
+averages.W2R_transitions       = avg_W2R_transitions;
+averages.S2W_transitions       = avg_S2W_transitions;
+averages.S2R_transitions       = avg_S2R_transitions;
+averages.R2W_transitions       = avg_R2W_transitions;
+averages.R2S_transitions       = avg_R2S_transitions;
+
+
 
 stndev.num_w_episodes        = std_wake_episodes_vs_time;
 stndev.num_sws_episodes      = std_SWS_episodes_vs_time;  
@@ -402,7 +488,12 @@ stndev.REMS_episode_duration = std_REMS_episode_duration_vs_time;
 stndev.time_in_w    		 = std_wake_epochs_vs_time*10/60;  % units are minutes
 stndev.time_in_sws 		     = std_SWS_epochs_vs_time*10/60;
 stndev.time_in_rems 		 = std_REMS_epochs_vs_time*10/60;
-
+stndev.W2S_transitions       = std_W2S_transitions;
+stndev.W2R_transitions       = std_W2R_transitions;
+stndev.S2W_transitions       = std_S2W_transitions;
+stndev.S2R_transitions       = std_S2R_transitions;
+stndev.R2W_transitions       = std_R2W_transitions;
+stndev.R2S_transitions       = std_R2S_transitions;
 
 if makeplots 
 % Finally, plot it all

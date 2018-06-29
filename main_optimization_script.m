@@ -5,7 +5,7 @@
 % model output and experimental data.  Starting with number of wake episodes 
 % and duration of SWS episodes. 
 
-
+shift = 'RW'
 % ---------------------------------------------------------------------------
 % Set up actual (experimental) values. These are what I am comparing simulation output to
 % actual{1} = [];  % experimental Wake episode data
@@ -14,17 +14,33 @@
 %load('FIG6_Experimental_Data.mat','wake_episodes_AW_averages','SWS_episode_duration_AW_averages');
 load('all_experimental_data.mat');
 clear actual 
-actual.wake_episode_duration = wake_episode_duration_RW_averages ;   % this variable is in the FIG6_Experimental_Data.mat workspace
-actual.sws_episode_duration  = SWS_episode_duration_RW_averages;
-actual.rems_episode_duration = REMS_episode_duration_RW_averages;
 
-actual.num_wake_episodes = num_wake_episodes_RW_averages;
-actual.num_sws_episodes  = num_sws_episodes_RW_averages;
-actual.num_rems_episodes = num_REMS_episodes_RW_averages;
+if strcmp(shift,'RW')
+	actual.wake_episode_duration = wake_episode_duration_RW_averages ;   % this variable is in the FIG6_Experimental_Data.mat workspace
+	actual.sws_episode_duration  = SWS_episode_duration_RW_averages;
+	actual.rems_episode_duration = REMS_episode_duration_RW_averages;
 
-actual.percent_in_wake = daily_percent_in_wake_RW_averages;
-actual.percent_in_sws  = daily_percent_in_sws_RW_averages;
-actual.percent_in_rems = daily_percent_in_REMS_RW_averages;
+	actual.num_wake_episodes = num_wake_episodes_RW_averages;
+	actual.num_sws_episodes  = num_sws_episodes_RW_averages;
+	actual.num_rems_episodes = num_REMS_episodes_RW_averages;
+
+	actual.percent_in_wake = daily_percent_in_wake_RW_averages;
+	actual.percent_in_sws  = daily_percent_in_sws_RW_averages;
+	actual.percent_in_rems = daily_percent_in_REMS_RW_averages;
+elseif strcmp(shift,'AW')
+	actual.wake_episode_duration = wake_episode_duration_AW_averages ;   % this variable is in the FIG6_Experimental_Data.mat workspace
+	actual.sws_episode_duration  = SWS_episode_duration_AW_averages;
+	actual.rems_episode_duration = REMS_episode_duration_AW_averages;
+
+	actual.num_wake_episodes = num_wake_episodes_AW_averages;
+	actual.num_sws_episodes  = num_sws_episodes_AW_averages;
+	actual.num_rems_episodes = num_REMS_episodes_AW_averages;
+
+	actual.percent_in_wake = daily_percent_in_wake_AW_averages;
+	actual.percent_in_sws  = daily_percent_in_sws_AW_averages;
+	actual.percent_in_rems = daily_percent_in_REMS_AW_averages;
+end 
+
 
 %actual{3} = REMS_episode_duration_AW_averages;
 
@@ -32,12 +48,14 @@ actual.percent_in_rems = daily_percent_in_REMS_RW_averages;
 
 % ---------------------------------------------------------------------------
 % ---- Set up optimization --------------------------------------------------
-FitnessFunction = @(x)multiobjective(x,actual);
+FitnessFunction = @(x)multiobjective(x,actual,shift);
 num_variables = 8;
 lb = [8.5,3.1,1e-5,1e-5,1e-5,1e-5,1e-5,1e-5];   % lower bounds.  check these
 ub = [8.7,3.3,0.1,0.1,0.1,0.1,0.1,0.1];       % upper bounds.  check these
 %lb = [8.5,3.1];   % lower bounds.  check these
 %ub = [8.7,3.3];       % upper bounds.  check these
+
+
 A = [];
 b = [];
 Aeq = [];
@@ -63,7 +81,14 @@ weight = abs(goal);
 %K0 = [3.25, 3, 0.007/0.65, 0.5, 1, 0.01, 0.006]; %K0 = [3.25, 3, 0.007/0.65, 0.5, 0.1, 0.0042, 0.006];
 
 % version 12.13: optimize using taud,gamma,mu,delta,c1,c2,WS_offset, SR_offset
-K0 = [ 3.25, 3, 0.015, 0.002,0.5,0.1,0.0042,0.006];
+%K0 = [ 3.25, 3, 0.015, 0.002,0.5,0.1,0.0042,0.006];
+
+% version 12.20: optimize using taui, taud and gamma.  All the other parameters were about the same between AW and RW
+%K0 = [14,1.8, 2.8];
+
+% version 1.4.18: optimizie using taui, taud and scale factors for the length of W episodes based on alertness or sleepiness
+% taui, taud, alertness_W_duration_scale_factor, sleepiness_S_duration_scale_factor, sleepiness_R_duration_scale_factor
+K0 = [ 17,2.18, 0.6,1.1, 1.1 ];
 
 % options for fgoalattain
 %  options = optimoptions('fgoalattain','Display','iter');
@@ -80,4 +105,4 @@ K0 = [ 3.25, 3, 0.015, 0.002,0.5,0.1,0.0042,0.006];
 
 % fminsearch
 options = optimset('Display','iter','PlotFcns',@optimplotfval);
-[K,fval,exitflag,output]=fminsearch(FitnessFunction,K0,options);
+[K_RW_during_work,fval,exitflag,output]=fminsearch(FitnessFunction,K0,options);

@@ -44,9 +44,9 @@ hold on
 % h3 = fill(window_times([1 1:end end]),[1 REM_percentage_means+SWS_percentage_means+wake_percentage_means 1],'g','EdgeColor','none');
 Y = [REM_percentage_means' SWS_percentage_means' wake_percentage_means' ];
 h=area(window_times,Y,'LineStyle','none');
-h(1).FaceColor = [1 0 0];
-h(2).FaceColor = [0 0.45 0.74];
-h(3).FaceColor = [0 0.5 0];
+h(1).FaceColor = [0.2863 0 0.5725];       % purple
+h(2).FaceColor = [0.4275 0.7137 1]; %light blue
+h(3).FaceColor = [0.8588 0.4275 0];  %orange
 
 % t_sleep_dep_indices = find(t==sleep_dep_start_stop_times);
 % h2=area(window_times(t_sleep_dep_indices),Y(t_sleep_dep_indices,:),'LineStyle','none')
@@ -61,9 +61,9 @@ h(3).FaceColor = [0 0.5 0];
 if ~isempty(sleep_dep_start_stop_times)
 	gray = [0.31 0.31 0.31];
 	for i=1:length(sleep_dep_start_times)
-		p = patch([sleep_dep_start_times(i) sleep_dep_end_times(i) sleep_dep_end_times(i) sleep_dep_start_times(i)],[0 0 1 1],gray);
+		p = patch([sleep_dep_start_times(i) sleep_dep_end_times(i) sleep_dep_end_times(i) sleep_dep_start_times(i)],[0 0 1 1],[0.5725 0.2863 0]);
 		p.EdgeColor='none';
-		p.FaceAlpha = 0.6;
+		%p.FaceAlpha = 0.9;
 	end 
 end 
 
@@ -81,8 +81,8 @@ ha.TickDir = 'out';
 ha.TickLength = [0.02 0.02];
 ha.LineWidth = 1.5;
 ha.FontSize = 12;
-ha.YTick = 0:0.1:1;
-ha.YTickLabel = {'0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'};
+ha.YTick = 0:0.2:1;
+ha.YTickLabel = {'0%','20%','40%','60%','80%','100%'};
 set(gca,'box','off')
 set(gca,'color','none')
 ylabel('% of total time')

@@ -4,7 +4,7 @@
 %								3) REMS episode duration for AW and RW
 
 
-addpath '\\FS1\WisorData\MATLAB\Rempe\Matlab_utilities\panel'
+%addpath '\\FS1\WisorData\MATLAB\Rempe\Matlab_utilities\panel'
 
 load 'all_experimental_data.mat'
 

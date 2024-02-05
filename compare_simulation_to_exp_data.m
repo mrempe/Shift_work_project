@@ -24,7 +24,7 @@ for i=1:5
 end
 clear t p
 
-significance.between_exp_simAW
+significance.between_exp_simAW;
 
 
 
@@ -44,7 +44,7 @@ for i=1:5
 end
 clear t p
 
-significance.between_exp_simRW
+significance.between_exp_simRW;
 
 
 

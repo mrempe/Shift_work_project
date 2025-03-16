@@ -33,8 +33,8 @@ only_make_plots     = 0;
 
 
 % ---- Run the markov chain model -----------------------------------------------------------------------------------------------------
-[S_AW,sleepstateAW,long_wake_timingsAW,sleep_averages.AW,sleep_std.AW] = two_process_model_with_markov_chain(134,input_paramsAW,'AW',1);
-[S_RW,sleepstateRW,long_wake_timingsRW,sleep_averages.RW,sleep_std.RW] = two_process_model_with_markov_chain(134,input_paramsRW,'RW',1);
+[S_AW,sleepstateAW,long_wake_timingsAW,sleep_averages.AW,sleep_std.AW] = two_process_model_with_markov_chain(134,input_paramsAW,'AW',0);
+[S_RW,sleepstateRW,long_wake_timingsRW,sleep_averages.RW,sleep_std.RW] = two_process_model_with_markov_chain(134,input_paramsRW,'RW',0);
 % -------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -44,7 +44,6 @@ if compute_transitions
 	latexRW = generate_transition_tables(sleep_averages.RW,sleep_stdRW,'RW');
 end
 % ---------------------------------------------------------------------------
-
 
 
 % ---- Store simulation output in structs -------------------------------------------------------
